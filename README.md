@@ -1,0 +1,2 @@
+# CoCoA
+CoCoA python package
