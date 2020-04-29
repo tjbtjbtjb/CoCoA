@@ -9,7 +9,7 @@ setup(
     # Needed to actually package something
     packages=['cocoa'],
     # Needed for dependencies
-    install_requires=['numpy'],
+    install_requires=['numpy','requests','pandas'],
     # *strongly* suggested for sharing
     version='0.1',
     # The license can be anything you like
