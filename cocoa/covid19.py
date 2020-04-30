@@ -10,12 +10,12 @@ class JHUCSSEdata:
 		self.__pandasData={}
 
 		for w in  self.whichDataList:
-			name_file="time_series_covid19_" + w + "_global.csv"
-			url=self.baseUrl+name_file
+			fileName="time_series_covid19_" + w + "_global.csv"
+			url=self.__baseUrl+fileName
 			self.__pandasData[w] = pandas.read_csv(url)
 
 	def getBaseUrl(self):
 		return self.__baseUrl
-		
+
 	def getRawData(self):
 		return self.__pandasData
