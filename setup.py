@@ -7,7 +7,7 @@ setup(
     author='Olivier Dadoun, Julien Browaeys, Tristan Beau',
     author_email='odadoun@gmail.com,browaeys@gmail.com,tristan.beau@gmail.com',
     # Needed to actually package something
-    packages=['cocoa'],
+    packages=['cocoa','cocoaplot'],
     # Needed for dependencies
     install_requires=['numpy','requests','pandas','matplotlib'],
     # *strongly* suggested for sharing
