@@ -11,7 +11,8 @@ class WorldInfo:
 		self.__pandasData=pandas.read_html(htmlContent)[0][['Country (or dependency)','Population (2020)','Land Area (Km²)']]
 		self.__pandasData.columns=['Country','Population','Area']
 
+	def getBaseUrl(self):
+		return self.__url
+
 	def getData(self):
 		return self.__pandasData
-
-    
