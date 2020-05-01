@@ -17,7 +17,7 @@ class WorldInfo:
 	def getData(self):
 		return self.__pandasData
 
-	getEuropeanCountries(self):
+	def getEuropeanCountries(self):
 	return ['Portugal','Spain','Ireland','United Kingdom','France','Italy','Germany','Belgium', \
 		'Netherlands','Luxembourg','Austria','Denmark','Swenden','Finland', \
 		'Estonia','Lettonia','Lituania','Czech Republic','Poland','Slovakia','Hungary','Slovenia', \
