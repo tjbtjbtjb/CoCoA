@@ -136,7 +136,7 @@ class Parser():
     		raise TypeError("Invalid keyword type argument %s , waiting for Cumul or Diff." % key)
 
     def getCountries(self):
-    	return np.array(self.getMaskedPoint()[self.which_data_list[0]].keys())
+    	return np.array(tuple(self.getMaskedPoint()[self.which_data_list[0]].keys()))
 
     
     def getDates(self):
