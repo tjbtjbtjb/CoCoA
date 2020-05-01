@@ -123,10 +123,15 @@ class Parser():
         return self.diff_days
 
     def getStats(self,**kwargs):
+    	if not isinstance(kwargs['country'],list):
+    		clist=[kwargs['country']]
+    	else:
+    		clist=kwargs['country']
+
     	if kwargs['type']=='Cumul':
-    		return self.getMaskedPoint()[kwargs['which']][kwargs['country']].data
+    		return np.array(tuple(dict((c,self.getMaskedPoint()[kwargs['which']][c].data) for c in clist).values()))
     	elif kwargs['type']=='Diff':
-    		return self.getDiffDays()[kwargs['which']][kwargs['country']]
+    		return np.array(tuple(dict((c,self.getDiffDays()[kwargs['which']][c]) for c in clist).values()))
     	else:
     		raise TypeError("Invalid keyword type argument %s , waiting for Cumul or Diff." % key)
     
