@@ -134,6 +134,10 @@ class Parser():
     		return np.array(tuple(dict((c,self.getDiffDays()[kwargs['which']][c]) for c in clist).values())).T
     	else:
     		raise TypeError("Invalid keyword type argument %s , waiting for Cumul or Diff." % key)
+
+    def getCountries(self):
+    	return np.array(self.getMaskedPoint[self.which_data_list[0]].keys())
+
     
     def getDates(self):
     	return np.array(self.dates[self.which_data_list[0]])
