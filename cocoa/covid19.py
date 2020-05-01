@@ -61,8 +61,11 @@ class UsefullFunction():
         raise argparse.ArgumentTypeError('Boolean value expected.')   
 
 class Parser():
-    def __init__(self,d):
+    def __init__(self,d=0):
       
+      if not d:
+      	d=JHUCSSEdata()
+
       self.dates={}
       self.dicos_countries={}
       self.dict_sum_data={}
@@ -115,7 +118,15 @@ class Parser():
         return self.masked_points
     
     def getDiffDays(self):
-        return self.diff_days            
+        return self.diff_days
+
+    def getStats(self,**kwargs):
+    	if kwargs['type']=='Cumul':
+    		return self.getMaskedPoint()[kwargs['which']][kwargs['country']].data
+    	elif kwargs['type']=='Diff':
+    		return self.getDiffDays()[kwargs['which']][kwargs['country']]
+    	else:
+    		raise TypeError("Invalid keyword type argument %s , waiting for Cumul or Diff." % key)
     
     def getDates(self):
-    	return self.dates[self.which_data_list[0]]
+    	return np.array(self.dates[self.which_data_list[0]])
