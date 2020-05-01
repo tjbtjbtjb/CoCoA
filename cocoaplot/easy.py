@@ -5,6 +5,8 @@
 Project : CoCoA
 Date :    april/may 2020
 Authors : Olivier Dadoun, Julien Browaeys, Tristan Beau
+Copyright © CoCoa-team-17
+License: See joint LICENSE file
 
 Module : cocoaplot.easy
 About : 
