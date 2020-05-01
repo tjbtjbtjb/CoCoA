@@ -1,3 +1,18 @@
+# -*- coding: utf-8 -*-
+
+""" 
+Project : CoCoA
+Date :    april/may 2020
+Authors : Olivier Dadoun, Julien Browaeys, Tristan Beau
+
+Module : cocoa.covid19
+About : 
+
+Main class definitions for covid19 dataset access. Currently, we are only using the JHU CSSE data. 
+The parser class gives a simplier access through an already filled dict of data
+
+"""
+
 import requests
 import pandas
 from collections import defaultdict
@@ -104,4 +119,3 @@ class Parser():
     
     def getDates(self):
     	return self.dates[self.which_data_list[0]]
-    	

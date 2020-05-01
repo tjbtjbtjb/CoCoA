@@ -1,3 +1,18 @@
+# -*- coding: utf-8 -*-
+
+""" 
+Project : CoCoA
+Date :    april/may 2020
+Authors : Olivier Dadoun, Julien Browaeys, Tristan Beau
+
+Module : cocoa.world
+About : 
+
+Provide simple quantitative information about countries in the worlds for normalisation purpuses of the CoCoA project.
+The database in use is explicitly available throuh the getBaseUrl() method.
+The European country list has been added for CoCoa specific needs.
+
+"""
 
 import requests
 import pandas

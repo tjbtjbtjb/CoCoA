@@ -1,4 +1,18 @@
-#import cocoa.world as cw
+
+# -*- coding: utf-8 -*-
+
+""" 
+Project : CoCoA
+Date :    april/may 2020
+Authors : Olivier Dadoun, Julien Browaeys, Tristan Beau
+
+Module : cocoaplot.easy
+About : 
+
+The aim is providing very simple class or function to produce in few line of codes plots of covid19 datasets.
+
+"""
+
 import cocoa.covid19 as cc
 import matplotlib.pyplot as plt
 
