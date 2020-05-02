@@ -129,9 +129,9 @@ class Parser():
     		clist=kwargs['country']
 
     	if kwargs['type']=='Cumul':
-    		return np.array(tuple(dict((c,self.getMaskedPoint()[kwargs['which']][c].data) for c in clist).values())).T
+    		return np.array(tuple(dict((c,self.getMaskedPoint()[kwargs['which']][c].data) for c in clist).values()))[0]
     	elif kwargs['type']=='Diff':
-    		return np.array(tuple(dict((c,self.getDiffDays()[kwargs['which']][c]) for c in clist).values())).T
+    		return np.array(tuple(dict((c,self.getDiffDays()[kwargs['which']][c]) for c in clist).values()))[0]
     	else:
     		raise TypeError("Invalid keyword type argument %s , waiting for Cumul or Diff." % key)
 
