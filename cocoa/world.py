@@ -36,6 +36,6 @@ class WorldInfo:
 
 	def getEuropeanCountries(self):
 		return ['Portugal','Spain','Ireland','United Kingdom','France','Italy','Germany','Belgium', \
-			'Netherlands','Luxembourg','Austria','Denmark','Swenden','Finland', \
-			'Estonia','Lettonia','Lituania','Czech Republic','Poland','Slovakia','Hungary','Slovenia', \
+			'Netherlands','Luxembourg','Austria','Denmark','Sweden','Finland', \
+			'Estonia','Latvia','Lithuania','Czechia','Poland','Slovakia','Hungary','Slovenia', \
 			'Croatia','Romania','Bulgaria','Greece','Malta','Cyprus']
