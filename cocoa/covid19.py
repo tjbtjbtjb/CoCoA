@@ -138,7 +138,7 @@ class Parser():
     	if out.shape[0] == 1:
     		return out[0]
     	else:
-    		return out
+    		return out.T
 
     def getCountries(self):
     	return np.array(tuple(self.getMaskedPoint()[self.which_data_list[0]].keys()))
