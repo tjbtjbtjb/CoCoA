@@ -128,6 +128,8 @@ class Parser():
     	else:
     		clist=kwargs['country']
 
+    	clist=[cName.replace('Czech Republic (Czechia)','Czechia') for cName in clist]
+
     	if kwargs['type']=='Cumul':
     		out = np.array(tuple(dict((c,self.getMaskedPoint()[kwargs['which']][c].data) for c in clist).values()))
     	elif kwargs['type']=='Diff':
