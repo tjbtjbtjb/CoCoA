@@ -19,6 +19,7 @@ import requests
 import pandas
 from collections import defaultdict
 import numpy as np
+from datetime import datetime as dt
 
 #class EpidemiologicalData:
 #	# empty parent class
@@ -130,17 +131,63 @@ class Parser():
 
     	clist=[cName.replace('Czech Republic (Czechia)','Czechia') for cName in clist]
 
+    	diffout=np.array(tuple(dict((c,self.getDiffDays()[kwargs['which']][c]) for c in clist).values()))
+    	sumout=np.array(tuple(dict((c,self.getMaskedPoint()[kwargs['which']][c].data) for c in clist).values()))
+
+    	option=kwargs.get('option', None)
+    	if option == 'nonneg':
+    		diffout=np.array(diffout,dtype=float)
+    		sumout=np.array(sumout,dtype=float)
+    		for c in range(diffout.shape[0]):
+    			yy=np.array(diffout[c,:],dtype=float)
+    			for kk in np.where(yy<0)[0]:
+    				k=int(kk)
+    				val_to_repart = -yy[k]
+    				if k < np.size(yy)-1:
+    					yy[k]=(yy[k+1]+yy[k-1])/2
+    				else:
+    					yy[k]=yy[k-1]
+    				val_to_repart = val_to_repart + yy[k]
+    				s=np.sum(yy[0:k])
+    				yy[0:k]=yy[0:k]*(1-float(val_to_repart)/s)
+
+    			diffout[c,:]=yy
+    			sumout[c,:]=np.cumsum(yy)
+
     	if kwargs['type']=='Cumul':
-    		out = np.array(tuple(dict((c,self.getMaskedPoint()[kwargs['which']][c].data) for c in clist).values()))
+    		out = sumout
     	elif kwargs['type']=='Diff':
-    		out = np.array(tuple(dict((c,self.getDiffDays()[kwargs['which']][c]) for c in clist).values()))
+    		out = diffout
     	else:
-    		raise TypeError("Invalid keyword type argument %s , waiting for Cumul or Diff." % key)
+    		raise TypeError("Invalid keyword type argument %s , waiting for Cumul or Diff." % key)    
 
     	if out.shape[0] == 1:
     		return out[0]
     	else:
     		return out.T
+
+    def getPandasStats(self,**kwargs):
+      #return diff pandas - from diff it is simple to have cumul -
+      if not isinstance(kwargs['country'],list):
+        clist=[kwargs['country']]
+      else:
+        clist=kwargs['country']
+        
+      clist=[cName.replace('Czech Republic (Czechia)','Czechia') for cName in clist]
+      d=[]
+      for coun in clist:
+        i=0
+        for datos in self.getDates():
+          d.append(
+                   {
+                    'country': coun,
+                    'date'   : dt.strptime(datos,'%m/%d/%y'),
+                    'cases'  : self.getDiffDays()[kwargs['which']][coun][i]
+                   }
+         )
+          i+=1  
+      babypandas=pandas.DataFrame(d)
+      return babypandas
 
     def getCountries(self):
     	return np.array(tuple(self.getMaskedPoint()[self.which_data_list[0]].keys()))
