@@ -53,10 +53,9 @@ And finally, the corresponding dates are given by `p.getDates()`.
 
 ## Demo code
 
-To go further and test the code, have a look on the `colab` platform to our demo notebook :
+To go further and test the code, have a look on the `colab` platform to our demo notebooks (also available in GitHub) :
 
-https://colab.research.google.com/drive/1SwcGIsarHozUCoWtOhBIGQppJKbKjhhP
-
+https://frama.link/cocoa_notebooks
 
 
 
