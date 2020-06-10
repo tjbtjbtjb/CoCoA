@@ -41,7 +41,7 @@ class CocoDisplay():
                       tools=[self.hover_tool,'box_zoom,box_select,crosshair,reset'])
           fig.xaxis.formatter=DatetimeTickFormatter(days=["%d %B %Y"],months=["%d %B %Y"],years=["%d %B %Y"])
         
-          babypandas=(self.p.getPandasStats(country=list_country,which=which_data)) 
+          babypandas=(self.p.getStats(country=list_country,which=which_data,output='pandas')) 
           babypandascumul=babypandas
           babypandascumul['cumul']=babypandas.groupby(['country'])['cases'].apply(lambda x: x.cumsum())
           data = pd.pivot_table(babypandas,index='date',columns='country',values='cases').reset_index()
@@ -67,7 +67,7 @@ class CocoDisplay():
   def DefFigInteractive(self,which_data,cumul_or_diff,list_country): 
       panels = []
       curvos=[]
-      babypandas=(self.p.getPandasStats(country=list_country,which=which_data)) 
+      babypandas=(self.p.getStats(country=list_country,which=which_data,output='pandas')) 
       babypandascumul=babypandas
       babypandascumul['cumul']=babypandas.groupby(['country'])['cases'].apply(lambda x: x.cumsum())
       data = pd.pivot_table(babypandas,index='date',columns='country',values='cases').reset_index()
