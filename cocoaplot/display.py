@@ -37,6 +37,14 @@ from bokeh.models import ColumnDataSource, Grid, Line, LinearAxis, Plot
 from bokeh.models import DataRange1d
 import bokeh.palettes
 
+import plotly.express as px
+import plotly.graph_objects as go
+from branca.colormap import LinearColormap
+import folium
+import json
+from geopy.geocoders import Nominatim
+import altair as alt
+
 # output_notebook(hide_banner=True)
 
 class CocoDisplay():
@@ -232,3 +240,114 @@ class CocoDisplay():
     def __delete__(self, instance):
         print("deleted in descriptor object")
         del self.value
+        
+        
+        
+class WorldMapDisplay():
+    def __init__(self, countries, cumul_or_diff, which_data):
+        self.geolocator = Nominatim(
+            user_agent="Worldmap for Covid-19 studing case")
+        # ,tiles="cartodbpositron")#,"CartoDB dark_matter")
+        self.world_map = folium.Map(width=600, height=400, location=[
+                                    48.52, 2.19], zoom_start=3)
+        self.countries = sorted(countries)
+        self.which_data = which_data
+        p = cc.Parser()
+        babypandas = (p.getStats(country=self.countries,type=cumul_or_diff,
+                                 which=which_data, output='pandas'))
+        babypandascumul = babypandas
+        babypandascumul['cumul'] = babypandas.groupby(
+            ['country'])['cases'].apply(lambda x: x.cumsum())
+
+        mask_date_max = babypandas.groupby(['country'])['date'].max()
+        babypandascumulmasked_date = babypandascumul['date'].isin(
+            mask_date_max)
+        self.data = pd.pivot_table(
+            babypandas, index='date', columns='country', values='cases').reset_index()
+        if cumul_or_diff == 'cumul':
+            self.data = pd.pivot_table(
+                babypandascumul, index='date', columns='country', values='cumul').reset_index()
+
+        map_data = pd.DataFrame({
+            'country': self.countries,
+            'totcases': babypandascumul[babypandascumulmasked_date]['cumul'].to_list()
+        })
+        self.totalsallcountries = sum(
+            babypandascumul[babypandascumulmasked_date]['cumul'])
+        self.maxdeaths = max(
+            babypandascumul[babypandascumulmasked_date]['cumul'])
+        self.map_dict = map_data.set_index('country')['totcases'].to_dict()
+
+    def LatLong(self, country):
+        if country != None:
+            location = self.geolocator.geocode(country)
+            if location != None:
+                Lat = location.latitude  # , location.longitude)
+                Long = location.longitude
+            else:
+                Lat = float("Nan")  # , location.longitude)
+                Long = float("Nan")
+        return (Lat, Long)
+
+    def DrawPopUpCircle(self):
+        for coun in self.countries:
+            filter_data = self.data[['date', coun]].rename(
+                columns={coun: 'cases'})
+            tot = self.map_dict[coun]
+            latlong = self.LatLong(coun)
+            start_coords = [latlong[0], latlong[1]]
+            source = pd.DataFrame(
+                {
+                    'date':  filter_data['date'],
+                    'cases':  filter_data['cases'],
+                })
+            if sum(filter_data['cases']) != 0:
+                chart = alt.Chart(source).mark_line().encode(
+                    alt.X('date', axis=alt.Axis(title='Date')),
+                    alt.Y('cases', axis=alt.Axis(title='Cases'))).properties(title=coun.upper())
+                vis1 = chart.to_json()
+                vega = folium.features.VegaLite(
+                    vis1, width='100%', height='100%')
+
+                #
+                maxrad = 50
+                circ_mkr = folium.CircleMarker(
+                    location=start_coords,
+                    radius=maxrad*tot/self.totalsallcountries,
+                    color='blue',
+                    fill=True,
+                    fill_color='red',
+                    fillOpacity=1.0,
+                    opacity=1.0,
+                    tooltip=coun,
+                    popup=folium.Popup(max_width=300).add_child(vega))
+                circ_mkr.add_to(self.world_map)
+
+    def drawCountry(self):
+        folium.GeoJson(
+            data='https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json',
+            style_function=lambda feature: {
+                'fillColor': self.getColor(feature),
+                'caption': 'Total deaths',
+                'fillOpacity': 0.5,
+                'weight': 0.5
+            }).add_to(self.world_map)
+
+    def getColor(self, feature):
+        value = self.map_dict.get(feature['properties']['name'])
+        self.color_scale = LinearColormap(['yellow', 'red'],
+                                          vmin=min(self.map_dict.values()), vmax=max(self.map_dict.values()))
+        # vmin = 0, vmax = 150)
+
+        if value is None:
+            return '#8c8c8c'  # MISSING -> gray
+        else:
+            return self.color_scale(value)
+
+    def returnMap(self):
+        self.drawCountry()
+        self.DrawPopUpCircle()
+        colormap = self.color_scale.to_step(len(self.countries))
+        colormap.caption = self.which_data.upper()
+        self.world_map.add_child(colormap)
+        return self.world_map
