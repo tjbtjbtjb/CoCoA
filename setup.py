@@ -23,7 +23,7 @@ setup(
     # Needed for dependencies
     install_requires=['numpy','requests','pandas','matplotlib','bokeh','plotly','branca','folium','geopy','altair'],
     # *strongly* suggested for sharing
-    version='0.2',
+    version='dev-post0.2',
     # The license can be anything you like
     license='MIT',
     description='CoCoA stands for COvid COlab Analysis project, which is an open source project initially designed to run in the Google colab environment.',
