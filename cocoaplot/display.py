@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" 
+"""
 Project : CoCoA
 Date :    april-june 2020
 Authors : Olivier Dadoun, Julien Browaeys, Tristan Beau
@@ -8,9 +8,9 @@ Copyright ©CoCoa-team-17
 License: See joint LICENSE file
 
 Module : cocoaplot
-About : 
+About :
 
-An interface module to easily plot cocoa data with bokeh 
+An interface module to easily plot cocoa data with bokeh
 
 """
 
@@ -37,9 +37,9 @@ from bokeh.models import ColumnDataSource, Grid, Line, LinearAxis, Plot
 from bokeh.models import DataRange1d
 import bokeh.palettes
 
-import plotly.express as px
-import plotly.graph_objects as go
-from branca.colormap import LinearColormap
+#import plotly.express as px
+#import plotly.graph_objects as go
+#from branca.colormap import LinearColormap
 import folium
 import json
 from geopy.geocoders import Nominatim
@@ -48,34 +48,36 @@ import altair as alt
 # output_notebook(hide_banner=True)
 
 class CocoDisplay():
-    def __init__(self, d=0):
-        self.colors = bokeh.palettes.d3['Category10'][10]
+    def __init__(self, database):
+        self.colors =  bokeh.palettes.d3['Category20'][10]
         self.hover_tool = HoverTool(tooltips=[
+            ('location',"@name"),
             ('cases', '@cases'),
             ('date', '@date{%F}')],
-            formatters={'date': 'datetime'}
+            formatters={'@date': 'datetime'}
         )
         self.coco_circle = []
         self.coco_line = []
-        self.database = ''
-        self.p = cc.Parser()
+        self.database=database
+        self.p=cc.Parser(database)
+
 
     def DefFigStatic(self, **kwargs):
-        if not isinstance(kwargs['country'], list):
-            clist = [kwargs['country']]
+        if not isinstance(kwargs['location'], list):
+            clist = [kwargs['location']]
         else:
-            clist = kwargs['country']
+            clist = kwargs['location']
         panels = []
         option = kwargs.get('option', None)
         if option == 'nonneg':
-            babypandas = self.p.getStats(country=clist, type=kwargs['type'], which=kwargs['which'],
+            babypandas = self.p.getStats(location=clist, type=kwargs['type'], which=kwargs['which'],
                                          output='pandas', option='nonneg')
         else:
             babypandas = self.p.getStats(
-                country=clist, type=kwargs['type'], which=kwargs['which'], output='pandas')
+                location=clist, type=kwargs['type'], which=kwargs['which'], output='pandas')
 
         data = pd.pivot_table(babypandas, index='date',
-                              columns='country', values='cases').reset_index()
+                              columns='location', values='cases').reset_index()
         for axis_type in ["linear", "log"]:
             fig = figure(plot_width=600, plot_height=400, y_axis_type=axis_type,
                          tools=[self.hover_tool, 'box_zoom,box_select,crosshair,reset'])
@@ -86,9 +88,11 @@ class CocoDisplay():
             for coun in sorted(clist):
                 filter_data = data[['date', coun]].rename(
                     columns={coun: 'cases'})
+                name=coun
+                filter_data['name']=[name]*len(data[['date',coun]])
                 src = ColumnDataSource(filter_data)
-                fig.line(x='date', y='cases', source=src,
-                         line_color=self.colors[i], legend_label=coun, line_width=2)
+                fig.line(x='date', y='cases', source=src,\
+                    line_color=self.colors[i%10], legend_label=coun, line_width=2,name=coun)
                 i += 1
             fig.legend.location = "top_left"
             if kwargs['which'] == 'confirmed' and self.database == 'aphp':
@@ -102,29 +106,33 @@ class CocoDisplay():
         return tabs
 
     def DefFigInteractive(self, **kwargs):
-        if not isinstance(kwargs['country'], list):
-            clist = [kwargs['country']]
+        if not isinstance(kwargs['location'], list):
+            clist = [kwargs['location']]
         else:
-            clist = kwargs['country']
+            clist = kwargs['location']
 
         panels = []
         curvos = []
         option = kwargs.get('option', None)
         if option == 'nonneg':
-            babypandas = self.p.getStats(country=clist, type=kwargs['type'], which=kwargs['which'],
+            babypandas = self.p.getStats(location=clist, type=kwargs['type'], which=kwargs['which'],
                                          output='pandas', option='nonneg')
         else:
             babypandas = self.p.getStats(
-                country=clist, type=kwargs['type'], which=kwargs['which'], output='pandas')
+                location=clist, type=kwargs['type'], which=kwargs['which'], output='pandas')
 
         data = pd.pivot_table(babypandas, index='date',
-                              columns='country', values='cases').reset_index()
+                              columns='location', values='cases').reset_index()
         filter_data1 = data[['date', clist[0]]].rename(
             columns={clist[0]: 'cases'})
+        name=clist[0]
+        filter_data1['name']=[name]*len(data[['date',clist[0]]])
         src1 = ColumnDataSource(filter_data1)
 
         filter_data2 = data[['date', clist[1]]].rename(
             columns={clist[1]: 'cases'})
+        name2=clist[1]
+        filter_data2['name']=[name2]*len(data[['date',clist[1]]])
         src2 = ColumnDataSource(filter_data2)
 
         for axis_type in ["linear", "log"]:
@@ -134,11 +142,11 @@ class CocoDisplay():
             fig.xaxis.formatter = DatetimeTickFormatter(
                 days=["%d %B %Y"], months=["%d %B %Y"], years=["%d %B %Y"])
 
-            fig.circle('date', 'cases', size=7, color='red', source=src1)
+            fig.circle('date', 'cases', size=7, color='red', source=src1,name=name)
             fig.line(x='date', y='cases', source=src1,
                      line_color='red', line_width=3, line_alpha=.8)
 
-            fig.circle('date', 'cases', size=7, color='blue', source=src2)
+            fig.circle('date', 'cases', size=7, color='blue', source=src2,name=name2)
             fig.line(x='date', y='cases', source=src2,
                      line_color='blue', line_width=3, line_alpha=.8)
 
@@ -153,14 +161,17 @@ class CocoDisplay():
 
             panel = Panel(child=fig, title=axis_type)
             panels.append(panel)
-
-        code = """
+        code="""
       var c = cb_obj.value;
       var y = s0.data[c];
+      for (var i = 0; i < y.length; i++) {
+        s1.data['name'][i]=c
+        }
       s1.data['cases'] = y;
       s1.change.emit();
       ax=p1.yaxis[0]
       """
+
         source = ColumnDataSource(data)
         callback1 = CustomJS(args=dict(s0=source, s1=src1), code=code)
         callback2 = CustomJS(args=dict(s0=source, s1=src2), code=code)
@@ -187,13 +198,13 @@ class CocoDisplay():
         list_fits_fig = crys.GetListFits()
         for dct in list_fits_fig:
             for key, value in dct.items():
-                country = key
+                location = key
                 if math.nan not in value[0] and math.nan not in value[1]:
-                    maxy = crys.GetFitsParameters()[country][1]
+                    maxy = crys.GetFitsParameters()[location][1]
                     if math.isnan(maxy) == False:
                         maxy = int(maxy)
                     leg = 'From fit : tmax:' + \
-                        str(crys.GetFitsParameters()[country][0])
+                        str(crys.GetFitsParameters()[location][0])
                     leg += '   Tot deaths:' + str(maxy)
                     fig = figure(plot_width=300, plot_height=200,
                                  tools=['box_zoom,box_select,crosshair,reset'], title=leg, x_axis_type="datetime")
@@ -202,7 +213,7 @@ class CocoDisplay():
                             for i in self.p.getDates()]
                     if err_y:
                         fig.circle(
-                            date, value[0], color=self.colors[i % 10], legend_label=country)
+                            date, value[0], color=self.colors[i % 10], legend_label=location)
                         y_err_x = []
                         y_err_y = []
                         for px, py in zip(date, value[0]):
@@ -213,7 +224,7 @@ class CocoDisplay():
                                        color=self.colors[i % 10])
                     else:
                         fig.line(
-                            date, value[0], line_color=self.colors[i % 10], legend_label=country)
+                            date, value[0], line_color=self.colors[i % 10], legend_label=location)
 
                     fig.line(date[:crys.GetTotalDaysConsidered(
                     )], value[1][:crys.GetTotalDaysConsidered()], line_color='red', line_width=2)
@@ -240,9 +251,9 @@ class CocoDisplay():
     def __delete__(self, instance):
         print("deleted in descriptor object")
         del self.value
-        
-        
-        
+
+
+
 class WorldMapDisplay():
     def __init__(self, countries, cumul_or_diff, which_data):
         self.geolocator = Nominatim(
@@ -253,34 +264,34 @@ class WorldMapDisplay():
         self.countries = sorted(countries)
         self.which_data = which_data
         p = cc.Parser()
-        babypandas = (p.getStats(country=self.countries,type=cumul_or_diff,
+        babypandas = (p.getStats(location=self.countries,type=cumul_or_diff,
                                  which=which_data, output='pandas'))
         babypandascumul = babypandas
         babypandascumul['cumul'] = babypandas.groupby(
-            ['country'])['cases'].apply(lambda x: x.cumsum())
+            ['location'])['cases'].apply(lambda x: x.cumsum())
 
-        mask_date_max = babypandas.groupby(['country'])['date'].max()
+        mask_date_max = babypandas.groupby(['location'])['date'].max()
         babypandascumulmasked_date = babypandascumul['date'].isin(
             mask_date_max)
         self.data = pd.pivot_table(
-            babypandas, index='date', columns='country', values='cases').reset_index()
+            babypandas, index='date', columns='location', values='cases').reset_index()
         if cumul_or_diff == 'cumul':
             self.data = pd.pivot_table(
-                babypandascumul, index='date', columns='country', values='cumul').reset_index()
+                babypandascumul, index='date', columns='location', values='cumul').reset_index()
 
         map_data = pd.DataFrame({
-            'country': self.countries,
+            'location': self.countries,
             'totcases': babypandascumul[babypandascumulmasked_date]['cumul'].to_list()
         })
         self.totalsallcountries = sum(
             babypandascumul[babypandascumulmasked_date]['cumul'])
         self.maxdeaths = max(
             babypandascumul[babypandascumulmasked_date]['cumul'])
-        self.map_dict = map_data.set_index('country')['totcases'].to_dict()
+        self.map_dict = map_data.set_index('location')['totcases'].to_dict()
 
-    def LatLong(self, country):
-        if country != None:
-            location = self.geolocator.geocode(country)
+    def LatLong(self, location):
+        if location != None:
+            location = self.geolocator.geocode(location)
             if location != None:
                 Lat = location.latitude  # , location.longitude)
                 Long = location.longitude
@@ -323,7 +334,7 @@ class WorldMapDisplay():
                     popup=folium.Popup(max_width=300).add_child(vega))
                 circ_mkr.add_to(self.world_map)
 
-    def drawCountry(self):
+    def drawLocation(self):
         folium.GeoJson(
             data='https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json',
             style_function=lambda feature: {
@@ -345,7 +356,7 @@ class WorldMapDisplay():
             return self.color_scale(value)
 
     def returnMap(self):
-        self.drawCountry()
+        self.drawLocation()
         self.DrawPopUpCircle()
         colormap = self.color_scale.to_step(len(self.countries))
         colormap.caption = self.which_data.upper()

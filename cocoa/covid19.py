@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" 
+"""
 Project : CoCoA
 Date :    april-june 2020
 Authors : Olivier Dadoun, Julien Browaeys, Tristan Beau
@@ -8,9 +8,9 @@ Copyright © CoCoa-team-17
 License: See joint LICENSE file
 
 Module : cocoa.covid19
-About : 
+About :
 
-Main class definitions for covid19 dataset access. Currently, we are only using the JHU CSSE data. 
+Main class definitions for covid19 dataset access. Currently, we are only using the JHU CSSE data.
 The parser class gives a simplier access through an already filled dict of data
 
 """
@@ -32,6 +32,7 @@ class JHUCSSEdata():
 
         aphpdata = kwargs.get('aphpdata', None)
         if aphpdata:
+            self.whichDataList = ["deaths", "resuscitation", "recovered"]
             self.__pandasData = self.convertAPHP()
         else:
             for w in self.whichDataList:
@@ -45,12 +46,39 @@ class JHUCSSEdata():
     def getRawData(self):
         return self.__pandasData
 
-        
-class Parser():
-    def __init__(self, d=0):
+    def setAPHPdata(self):
+        self.__pandasData = {}
+        self.__baseUrl="https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7"
+        return pandas.read_csv(self.__baseUrl,sep = ';')
 
-        if not d:
-            d = JHUCSSEdata()
+    def convertAPHP(self):
+        pd=self.setAPHPdata()
+        pd=pd.dropna()
+        newpd=pd.loc[pd['sexe'] == 0].rename(columns={'dep':'Country/Region'}).\
+            rename(columns={'rea':'resuscitation'}).rename(columns={'rad':'recovered'}).\
+            rename(columns={'dc':'deaths'}).rename(columns={'jour':'date'})
+        newpd['date'] = pandas.to_datetime(newpd['date'],errors='coerce')
+        newpd['date']=newpd['date'].dt.strftime("%m/%d/%y")
+
+        pandasData={}
+        for w in self.whichDataList:
+            newpdtemp = newpd[['Country/Region',w,'date']]
+            newpdtemp=newpdtemp.pivot(index='Country/Region',values=w, columns='date')
+            newpdtemp = newpdtemp.reset_index()
+            pandasData[w]=newpdtemp
+        return pandasData
+
+
+
+class Parser():
+    def __init__(self, database):
+        self.i_start = 0
+        self.i_end = 103
+
+        if database == "johnshopkins":
+            d=JHUCSSEdata()
+        if database == "aphp":
+            d=JHUCSSEdata(aphpdata='aphpdata')
 
         self.dates = {}
         self.dicos_countries = {}
@@ -66,14 +94,17 @@ class Parser():
         for w in self.which_data_list:
             self.dicos_countries[w] = defaultdict(list)
 
-            self.dates[w] = list(df[w].head(0))[4:]
+            if database == "johnshopkins":
+                self.dates[w]  = list(df[w].head(0))[4:]
+            else:
+                self.dates[w]  = list(df[w].head(0))[1:]
 
             for index, row in df[w].iterrows():
-                country = row["Country/Region"]
+                location = row["Country/Region"]
                 # if country in list(Population_Tab["Country (or dependency)"]) :
                 value = [int(i) if i != '' else -1 for i in
                          row[self.dates[w]].values]
-                self.dicos_countries[w][country].append(value)
+                self.dicos_countries[w][location].append(value)
                 # else:
                 #print(' ===>>> ',country,' not found')
                 #  nb_notfound+=1
@@ -114,10 +145,10 @@ class Parser():
         return self.diff_days
 
     def getStats(self, **kwargs):
-        if not isinstance(kwargs['country'], list):
-            clist = [kwargs['country']]
+        if not isinstance(kwargs['location'], list):
+            clist = [kwargs['location']]
         else:
-            clist = kwargs['country']
+            clist = kwargs['location']
 
         clist = [cName.replace('Czech Republic (Czechia)', 'Czechia')
                  for cName in clist]
@@ -164,7 +195,7 @@ class Parser():
                 for datos in self.getDates():
                     d.append(
                         {
-                            'country': coun,
+                            'location': coun,
                             'date': dt.strptime(datos, '%m/%d/%y'),
                             'cases': out[enum, :][i]
                         }
