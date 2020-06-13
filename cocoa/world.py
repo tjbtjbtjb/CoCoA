@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" 
+"""
 Project : CoCoA
 Date :    april-june 2020
 Authors : Olivier Dadoun, Julien Browaeys, Tristan Beau
@@ -8,14 +8,14 @@ Copyright © CoCoa-team-17
 License: See joint LICENSE file
 
 Module : cocoa.world
-About : 
+About :
 
 Provide simple quantitative information about countries in the worlds for normalisation purpuses of the CoCoA project.
 The database in use is explicitly available throuh the getBaseUrl() method.
 The EU and all continental country list have been added for CoCoa specific needs.
 
 """
-            
+
 import requests
 import pandas
 
@@ -27,8 +27,18 @@ class WorldInfo:
         self.__url = "https://www.worldometers.info/world-population/population-by-country/"
         htmlContent = requests.get(self.__url).content
         self.__pandasData = pandas.read_html(htmlContent)[
-            0][['Country (or dependency)', 'Population (2020)', 'Land Area (Km²)']]
-        self.__pandasData.columns = ['Country', 'Population', 'Area']
+            0][['Country (or dependency)', 'Population (2020)', 'Land Area (Km²)','Density (P/Km²)']]
+        self.__pandasData.columns = ['Country', 'Population', 'Area','Density']
+        self.CountriesNamesUnified()
+
+    def CountriesNamesUnified(self):
+        self.__pandasData=self.__pandasData.replace('Congo','Congo (Brazzaville)')
+        self.__pandasData=self.__pandasData.replace('DR Congo','Congo (Kinshasa)')
+        self.__pandasData=self.__pandasData.replace('Côte d\'Ivoire','Cote d\'Ivoire')
+        self.__pandasData=self.__pandasData.replace('South Korea','Korea, South')
+        self.__pandasData=self.__pandasData.replace('Saint Kitts & Nevis','Saint Kitts and Nevis')
+        self.__pandasData=self.__pandasData.replace('St. Vincent & Grenadines','Saint Vincent and the Grenadines')
+        self.__pandasData=self.__pandasData.replace('United States','US')
 
     def getBaseUrl(self):
         return self.__url
@@ -85,3 +95,28 @@ class WorldInfo:
                    'Togo', 'Tunisia', 'Tanzania', 'Uganda', 'Zambia', 'Zimbabwe', 'Algeria', 'Central African Republic',
                    'Chad', 'Comoros', 'Equatorial Guinea', 'Morocco', 'South Africa']
         return sorted(country)
+
+    def getAllCountriesWorld(self):
+        country =  self.getAfricaCountries() +  self.getSouthAmericaCountries() +\
+        self.getNorthAmericaCountries() + self.getAsiaCountries() + self.getEuropeCountries()
+        return sorted(country)
+
+    def CountriesOver65yearsAbolute(self):
+        df = pandas.read_html("https://en.wikipedia.org/wiki/List_of_countries_by_age_structure")[0]
+        df.columns = [ '_'.join(x) for x in df.columns ]
+        df=df.rename(columns={"Country_Country":"Country"})\
+				 .rename(columns={"Population by age_age over 65 years[3]":"over65"})
+        df['over65'] = list(map(lambda x: x[:-1], df['over65'].values))
+        df['over65'] = df['over65'].astype(float)
+        coun,over65,percentage=[],[],[]
+        w=self.__pandasData
+        for i in df['Country']:
+            if w.loc[w['Country']==i,'Population'].empty or df.loc[df['Country']==i,'over65'].empty:
+                val=-1
+            else:
+                val=(w.loc[w['Country']==i,'Population'].values*\
+					df.loc[df['Country']==i,'over65'].values/100.	)[0]
+            coun.append(i)
+            over65.append(val)
+            percentage.append(df.loc[df['Country']==i,'over65'].values[0])
+        return pandas.DataFrame({'Country':coun,'Percentage':percentage,'PopulationOver65':over65})
