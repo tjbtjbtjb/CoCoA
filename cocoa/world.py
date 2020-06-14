@@ -32,6 +32,7 @@ class WorldInfo:
         self.CountriesNamesUnified()
 
     def CountriesNamesUnified(self):
+        ''' Change worldometers names countries to JohnsHopkins names ones'''
         self.__pandasData=self.__pandasData.replace('Congo','Congo (Brazzaville)')
         self.__pandasData=self.__pandasData.replace('DR Congo','Congo (Kinshasa)')
         self.__pandasData=self.__pandasData.replace('Côte d\'Ivoire','Cote d\'Ivoire')
@@ -39,6 +40,7 @@ class WorldInfo:
         self.__pandasData=self.__pandasData.replace('Saint Kitts & Nevis','Saint Kitts and Nevis')
         self.__pandasData=self.__pandasData.replace('St. Vincent & Grenadines','Saint Vincent and the Grenadines')
         self.__pandasData=self.__pandasData.replace('United States','US')
+        self.__pandasData=self.__pandasData.replace('Czech Republic (Czechia)', 'Czechia')
 
     def getBaseUrl(self):
         return self.__url
@@ -54,8 +56,8 @@ class WorldInfo:
         return sorted(country)
 
     def getEuropeCountries(self):
-        country = ['Andorra', 'Albania', 'Austria', 'Belgium', 'Bulgaria', 'Belarus',
-                   'Germany', 'Denmark', 'Estonia', 'Finland', 'France', 'Greece', 'Hungary',
+        country = ['Andorra', 'Albania', 'Austria', 'Belgium', 'Bulgaria', 'Belarus','Czechia',
+                   'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary',
                    'Ireland', 'Iceland', 'Italy', 'Liechtenstein', 'Lithuania',
                    'Luxembourg', 'Latvia', 'North Macedonia', 'Malta', 'Netherlands',
                    'Norway', 'Poland', 'Portugal', 'Romania', 'Russia', 'Sweden', 'Slovenia',
