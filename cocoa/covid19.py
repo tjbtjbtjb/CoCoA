@@ -24,6 +24,9 @@ import pandas as pd
 
 
 class JHUCSSEdata():
+    ''' COVID-19 Data Repository by the
+    Center for Systems Science and Engineering (CSSE) at Johns Hopkins University
+    https://github.com/CSSEGISandData/COVID-19''' 
     def __init__(self, **kwargs):
         self.__baseUrl = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/"
         self.__baseUrl += "csse_covid_19_data/csse_covid_19_time_series/"
@@ -150,8 +153,6 @@ class Parser():
         else:
             clist = kwargs['location']
 
-        clist = [cName.replace('Czech Republic (Czechia)', 'Czechia')
-                 for cName in clist]
 
         diffout = np.array(
             tuple(dict((c, self.getDiffDays()[kwargs['which']][c]) for c in clist).values()))
