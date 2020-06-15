@@ -22,7 +22,6 @@ import numpy as np
 from datetime import datetime as dt
 import pandas as pd
 
-
 class JHUCSSEdata():
     def __init__(self, **kwargs):
         self.__baseUrl = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/"
