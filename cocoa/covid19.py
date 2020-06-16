@@ -118,9 +118,6 @@ class Parser():
         else:
             clist = kwargs['country']
 
-        clist = [cName.replace('Czech Republic (Czechia)', 'Czechia')
-                 for cName in clist]
-
         diffout = np.array(
             tuple(dict((c, self.getDiffDays()[kwargs['which']][c]) for c in clist).values()))
         sumout = np.array(tuple(dict(
@@ -170,6 +167,26 @@ class Parser():
                     )
                     i += 1
             babypandas = pd.DataFrame(d)
+            corresp={"US":"United States of America",
+                "Bahamas":"The Bahamas",
+                "Cote d'Ivoire":"Ivory Coast",
+                "Czechia":"Czech Republic",
+                "Guinea-Bissau":"Guinea Bissau",
+                "Korea, South":"South Korea",
+                "North Macedonia":"Macedonia",
+                "Serbia":"Republic of Serbia",
+                "Eswatini":"Swaziland",
+                "Timor-Leste":"East Timor",
+                "Taiwan*":"Taiwan",
+                "Tanzania":"United Republic of Tanzania",
+                "West Bank and Gaza":"West Bank",
+                "Burma":"Myanmar",
+                "Congo (Brazzaville)":"Republic of the Congo",
+                "Congo (Kinshasa)":"Democratic Republic of the Congo"
+            }
+            for k,v in corresp.items():    
+                babypandas.loc[babypandas["country"]==k,["country"]]=v
+                
             return babypandas
         else:
             if out.shape[0] == 1:

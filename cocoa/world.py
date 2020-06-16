@@ -14,6 +14,7 @@ Provide simple quantitative information about countries in the worlds for normal
 The database in use is explicitly available throuh the getBaseUrl() method.
 The EU and all continental country list have been added for CoCoa specific needs.
 
+Countries are named according to https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/ names. Caution.
 """
             
 import requests
@@ -40,7 +41,7 @@ class WorldInfo:
         country = ['Portugal', 'Spain', 'Ireland', 'United Kingdom', 'France', 'Italy', 'Germany', 'Belgium',
                    'Netherlands', 'Luxembourg', 'Austria', 'Denmark', 'Sweden', 'Finland',
                    'Estonia', 'Latvia', 'Lithuania', 'Poland', 'Slovakia', 'Hungary', 'Slovenia',
-                   'Croatia', 'Romania', 'Bulgaria', 'Greece', 'Malta', 'Cyprus']
+                   'Croatia', 'Romania', 'Bulgaria', 'Greece', 'Malta', 'Cyprus','Czechia']
         return sorted(country)
 
     def getEuropeCountries(self):
@@ -51,17 +52,22 @@ class WorldInfo:
                    'Norway', 'Poland', 'Portugal', 'Romania', 'Russia', 'Sweden', 'Slovenia',
                    'Slovakia', 'Ukraine', 'Bosnia and Herzegovina',
                    'Croatia', 'Moldova', 'Monaco', 'Montenegro', 'Serbia', 'Spain', 'Switzerland',
-                   'United Kingdom']
+                   'United Kingdom','Czechia','Kosovo']
         return sorted(country)
 
     def getAsiaCountries(self):
         country = ['Afghanistan', 'Armenia', 'Azerbaijan', 'Bangladesh', 'Bahrain', 'Brunei',
-                   'Bhutan', 'China', 'Cyprus', 'Georgia', 'Indonesia', 'Israel',
+                   'Bhutan', 'China', 'Cyprus', 'Georgia', 'Indonesia','Israel',
                    'India', 'Iraq', 'Iran', 'Jordan', 'Japan', 'Kyrgyzstan', 'Korea, South',
                    'Kuwait', 'Lebanon', 'Mongolia', 'Maldives', 'Malaysia', 'Nepal', 'Oman',
                    'Philippines', 'Pakistan', 'Qatar', 'Saudi Arabia', 'Singapore', 'Syria', 'Thailand',
                    'Tajikistan', 'Turkey', 'Uzbekistan', 'Vietnam', 'Yemen', 'Cambodia',
-                   'Timor-Leste', 'Kazakhstan', 'Laos', 'Sri Lanka', 'United Arab Emirates']
+                   'Timor-Leste', 'Kazakhstan', 'Laos', 'Sri Lanka', 'United Arab Emirates',
+                   'Burma','Taiwan*','West Bank and Gaza','Western Sahara']
+        return sorted(country)
+        
+    def getOceaniaCountries(self):
+        country = ['Australia','New Zealand','Fiji','Papua New Guinea']
         return sorted(country)
 
     def getNorthAmericaCountries(self):
@@ -83,5 +89,15 @@ class WorldInfo:
                    'Liberia', 'Lesotho', 'Libya', 'Madagascar', 'Mali', 'Mauritania', 'Mauritius', 'Malawi', 'Mozambique',
                    'Namibia', 'Niger', 'Nigeria', 'Rwanda', 'Seychelles', 'Sudan', 'Sierra Leone', 'Senegal', 'Somalia',
                    'Togo', 'Tunisia', 'Tanzania', 'Uganda', 'Zambia', 'Zimbabwe', 'Algeria', 'Central African Republic',
-                   'Chad', 'Comoros', 'Equatorial Guinea', 'Morocco', 'South Africa']
+                   'Chad', 'Comoros', 'Equatorial Guinea', 'Morocco', 'South Africa','Eswatini',
+                   'Sao Tome and Principe','South Sudan']
+        return sorted(country)
+        
+    def getWorldCountries(self):
+        country=self.getAfricaCountries() \
+            + self.getSouthAmericaCountries() \
+            + self.getNorthAmericaCountries() \
+            + self.getOceaniaCountries() \
+            + self.getAsiaCountries() \
+            + self.getEuropeCountries()
         return sorted(country)
