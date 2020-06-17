@@ -52,7 +52,7 @@ class WorldInfo:
                    'Norway', 'Poland', 'Portugal', 'Romania', 'Russia', 'Sweden', 'Slovenia',
                    'Slovakia', 'Ukraine', 'Bosnia and Herzegovina',
                    'Croatia', 'Moldova', 'Monaco', 'Montenegro', 'Serbia', 'Spain', 'Switzerland',
-                   'United Kingdom','Czechia','Kosovo']
+                   'United Kingdom','Czechia','Kosovo','San Marino','Holy See']
         return sorted(country)
 
     def getAsiaCountries(self):
