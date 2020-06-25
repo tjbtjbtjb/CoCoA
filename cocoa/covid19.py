@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 
-""" 
-Project : CoCoA
+""" Project : CoCoA
 Date :    april-june 2020
 Authors : Olivier Dadoun, Julien Browaeys, Tristan Beau
 Copyright © CoCoa-team-17
@@ -22,7 +20,7 @@ import numpy as np
 from datetime import datetime as dt
 import pandas as pd
 
-class JHUCSSEdata():
+class JHUCSSEdata:
     def __init__(self, **kwargs):
         self.__baseUrl = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/"
         self.__baseUrl += "csse_covid_19_data/csse_covid_19_time_series/"
@@ -44,8 +42,26 @@ class JHUCSSEdata():
     def getRawData(self):
         return self.__pandasData
 
+class db:
+    def __init__(self,base=None):
+        self._base=base
+    
+    def getFields(self,base=None):
+        if base == None:
+            if self._base != None:
+                base=self._base
+            else:
+                base=''
         
-class Parser():
+        if base=='JHU': # John Hopkins University data
+            fields=['deaths','confirmed','recovered']
+        elif base=='SPF': # Sante Publique France 
+            fields=['a','b','c']
+        else:
+            raise IndexError('Unknown base '+base)
+        return fields
+        
+class Parser: # base not used currently
     def __init__(self, d=0):
 
         if not d:
@@ -167,22 +183,22 @@ class Parser():
                     )
                     i += 1
             babypandas = pd.DataFrame(d)
-            corresp={"US":"United States of America",
-                "Bahamas":"The Bahamas",
-                "Cote d'Ivoire":"Ivory Coast",
-                "Czechia":"Czech Republic",
-                "Guinea-Bissau":"Guinea Bissau",
-                "Korea, South":"South Korea",
-                "North Macedonia":"Macedonia",
-                "Serbia":"Republic of Serbia",
-                "Eswatini":"Swaziland",
-                "Timor-Leste":"East Timor",
-                "Taiwan*":"Taiwan",
-                "Tanzania":"United Republic of Tanzania",
-                "West Bank and Gaza":"West Bank",
-                "Burma":"Myanmar",
-                "Congo (Brazzaville)":"Republic of the Congo",
-                "Congo (Kinshasa)":"Democratic Republic of the Congo"
+            corresp={"US":"United States of America",#United States
+                "Bahamas":"The Bahamas",#Bahamas
+                "Cote d'Ivoire":"Ivory Coast",#	Côte d'Ivoire
+                "Czechia":"Czech Republic",#	Czech Republic (Czechia)
+                "Guinea-Bissau":"Guinea Bissau",# 	Guinea-Bissau
+                "Korea, South":"South Korea",#	South Korea
+                "North Macedonia":"Macedonia",# North Macedonia
+                "Serbia":"Republic of Serbia",# Serbia
+                "Eswatini":"Swaziland",#   	Eswatini
+                "Timor-Leste":"East Timor",#  Timor-Leste
+                "Taiwan*":"Taiwan", # ***
+                "Tanzania":"United Republic of Tanzania", #  Tanzania
+                "West Bank and Gaza":"West Bank", # NO
+                "Burma":"Myanmar",# ***
+                "Congo (Brazzaville)":"Republic of the Congo",# Congo
+                "Congo (Kinshasa)":"Democratic Republic of the Congo"# ***DR Congo
             }
             for k,v in corresp.items():    
                 babypandas.loc[babypandas["country"]==k,["country"]]=v
