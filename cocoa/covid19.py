@@ -20,23 +20,36 @@ import pandas
 from collections import defaultdict
 import numpy as np
 from datetime import datetime as dt
+from datetime import timedelta
 import pandas as pd
 
 
 class JHUCSSEdata():
     ''' COVID-19 Data Repository by the
     Center for Systems Science and Engineering (CSSE) at Johns Hopkins University
-    https://github.com/CSSEGISandData/COVID-19''' 
+    https://github.com/CSSEGISandData/COVID-19'''
     def __init__(self, **kwargs):
         self.__baseUrl = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/"
         self.__baseUrl += "csse_covid_19_data/csse_covid_19_time_series/"
         self.whichDataList = ["deaths", "confirmed", "recovered"]
         self.__pandasData = {}
-
+        self.__pandasData2 = {}
+        self.MinDateAPHP , self.MaxDateAPHP = 0, 0
         aphpdata = kwargs.get('aphpdata', None)
         if aphpdata:
-            self.whichDataList = ["deaths", "resuscitation", "recovered"]
-            self.__pandasData = self.convertAPHP()
+            self.whichDataList=["deaths", "resuscitation", "recovered"]
+            totpd = {}
+            pan1=self.convertAPHP()
+
+            for i in self.whichDataList:
+                totpd[i]=pan1[i]
+            pan2=self.convertSantePub()
+            whichDataListSante=['total_tests','total_cases']
+            for i in  whichDataListSante:
+                 totpd[i]=pan2[i]
+            self.whichDataList =  self.whichDataList + whichDataListSante
+            self.__pandasData  = totpd
+
         else:
             for w in self.whichDataList:
                 fileName = "time_series_covid19_" + w + "_global.csv"
@@ -50,6 +63,7 @@ class JHUCSSEdata():
         return self.__pandasData
 
     def setAPHPdata(self):
+        '''https://www.data.gouv.fr/fr/datasets/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/'''
         self.__pandasData = {}
         self.__baseUrl="https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7"
         return pandas.read_csv(self.__baseUrl,sep = ';')
@@ -61,8 +75,8 @@ class JHUCSSEdata():
             rename(columns={'rea':'resuscitation'}).rename(columns={'rad':'recovered'}).\
             rename(columns={'dc':'deaths'}).rename(columns={'jour':'date'})
         newpd['date'] = pandas.to_datetime(newpd['date'],errors='coerce')
+        self.MinDateAPHP,self.MaxDateAPHP = min(newpd['date']),max(newpd['date'])
         newpd['date']=newpd['date'].dt.strftime("%m/%d/%y")
-
         pandasData={}
         for w in self.whichDataList:
             newpdtemp = newpd[['Country/Region',w,'date']]
@@ -71,7 +85,50 @@ class JHUCSSEdata():
             pandasData[w]=newpdtemp
         return pandasData
 
+    def setSantePubdata(self):
+        '''https://www.data.gouv.fr/fr/datasets/donnees-relatives-aux-resultats-des-tests-virologiques-covid-19/'''
+        self.__pandasData = {}
+        self.__baseUrl="https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675"
+        return pandas.read_csv(self.__baseUrl,sep = ',')
 
+    def convertSantePub(self):
+        pd=self.setSantePubdata()
+        oripd=pd.rename(columns={'dep':'Country/Region'}).\
+            rename(columns={'p':'total_cases'}).rename(columns={'t':'total_tests'}).\
+            rename(columns={'jour':'date'})
+        oripd=oripd.drop(columns=['cl_age90'])
+        oripd=oripd.sort_values(by=['Country/Region','date'])
+        oripd['date'] = pandas.to_datetime(oripd['date'],errors='coerce')
+
+        if min(oripd['date']) < self.MinDateAPHP or max(oripd['date']) > self.MaxDateAPHP:
+            print("Check the APHP and SantePublique dates")
+            exit()
+        delta_min = min(oripd['date']) -  self.MinDateAPHP
+        delta_max = self.MaxDateAPHP - max(oripd['date'])
+
+        newpd=oripd.copy()
+        newpd['date']=newpd['date'].dt.strftime("%m/%d/%y")
+        newpd=(newpd.groupby(['Country/Region','date']).sum())
+        newpd.reset_index(inplace=True)
+
+        pandasData={}
+        for w in ['total_tests','total_cases']:
+            newpdtemp = newpd[['Country/Region',w,'date']]
+            newpdtemp = newpdtemp.pivot(index='Country/Region',values=w, columns='date')
+
+            a=['0']*newpdtemp.shape[0]
+            for i in range(delta_min.days):
+                days=self.MinDateAPHP + timedelta(days=i)
+                newpdtemp.insert(loc=0+i,column=days.strftime("%m/%d/%y"),value=a)
+
+            last_column=len(newpdtemp.columns)
+            for i in range(0,delta_max.days):
+                days=max(oripd['date']) + timedelta(days=i+1)
+                newpdtemp.insert(loc=last_column+i,column=days.strftime("%m/%d/%y"),value=a)
+
+            newpdtemp = newpdtemp.reset_index()
+            pandasData[w]=newpdtemp
+        return pandasData
 
 class Parser():
     def __init__(self, database):

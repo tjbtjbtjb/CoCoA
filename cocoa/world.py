@@ -103,6 +103,90 @@ class WorldInfo:
         self.getNorthAmericaCountries() + self.getAsiaCountries() + self.getEuropeCountries()
         return sorted(country)
 
+
+    def getAuvergneRhoneAlpes(self):
+        department = ['01','03','07','15','26','38','42','43','63','69','73','74']
+        name='Auvergne Rhone Alpes'
+        return sorted(department),name
+
+    def getBourgogneFrancheComte(self):
+        department = ['21','25','39','58','70','71','89','90']
+        name='Bourgogne Franche Comte'
+        return sorted(department), name
+
+    def getBretagne(self):
+        department = ['22','29','35','56']
+        name='Bretagne'
+        return sorted(department),name
+
+    def getCentreValdeLoire(self):
+        department = ['18','28','36','37','41','45']
+        name='Centre Val de Loire'
+        return sorted(department),name
+
+    def getCorse(self):
+        department = ['2A','2B']
+        name = 'Corse'
+        return sorted(department),name
+
+    def getGrandEst(self):
+        department = ['08','51','52','54','55','57','67','68','88']
+        name = 'Grand Est'
+        return sorted(department),name
+
+    def getHautsdeFrance(self):
+        department = ['02','59','60','62','80']
+        name = 'Hauts de France'
+        return sorted(department),name
+
+    def getIleDeFrance(self):
+        department = ['75','77','78','91','92','93','94','95']
+        name = 'Ile de France'
+        return sorted(department),name
+
+    def getCalvados(self):
+        department = ['14','27','50','61','76']
+        name='Calvados'
+        return sorted(department),name
+
+    def getNouvelleAquitaine(self):
+        department = ['16','17','19','23','24','33','40','47','64','79','86','87']
+        name='Nouvelle Aquitaine'
+        return sorted(department),name
+
+    def getOccitanie(self):
+        department = ['09','11','12','30','31','32','34','46','48','65','66','81','82']
+        name= 'Occitanie'
+        return sorted(department),name
+
+    def getPaysdelaLoire(self):
+        department = ['44','49','53','72','85']
+        name='Pays de la Loire'
+        return sorted(department),name
+
+    def getProvenceAlpesCotedAzur(self):
+        department = ['04','05','06','13','83','84']
+        name='Provence Alpes Cote d\' Azur'
+        return sorted(department),name
+
+    def getAllFranceDepartment(self):
+        department = self.getAuvergneRhoneAlpes()[0] + self.getBourgogneFrancheComte()[0] + self.getBretagne()[0] + \
+        self.getCentreValdeLoire()[0] + self.getCorse()[0] + self.getGrandEst()[0] + self.getHautsdeFrance()[0] + \
+        self.getIleDeFrance()[0] + self.getCalvados()[0] + self.getNouvelleAquitaine()[0] + self.getOccitanie()[0] +\
+        self.getPaysdelaLoire()[0] + self.getProvenceAlpesCotedAzur()[0]
+        #dep , name = department
+        return department
+
+    def getAllFranceRegions(self):
+        regions=[]
+        department = [self.getAuvergneRhoneAlpes(),self.getBourgogneFrancheComte(),self.getBretagne() , \
+        self.getCentreValdeLoire() , self.getCorse() , self.getGrandEst() ,self.getHautsdeFrance() , \
+        self.getIleDeFrance() , self.getCalvados() , self.getNouvelleAquitaine() , self.getOccitanie() ,\
+        self.getPaysdelaLoire() , self.getProvenceAlpesCotedAzur()]
+        for i in department:
+            regions.append(i)
+        return regions
+
     def CountriesOver65yearsAbolute(self):
         df = pandas.read_html("https://en.wikipedia.org/wiki/List_of_countries_by_age_structure")[0]
         df.columns = [ '_'.join(x) for x in df.columns ]
