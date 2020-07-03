@@ -19,36 +19,36 @@ import warnings
 
 class GeoManager():
     
-    _liststandard=['iso2',    # Iso2 standard, default
+    _list_standard=['iso2',    # Iso2 standard, default
             'iso3',           # Iso3 standard
             'name',           # Standard name ( != Official, caution )
             'num']            # Numeric standard
     _standard = None
     
-    def __init__(self,standard=_liststandard[0]):
-        self.setStandard(standard)
+    def __init__(self,standard=_list_standard[0]):
+        self.set_standard(standard)
     
-    def getListStandard(self):
-        return self._liststandard
+    def get_list_standard(self):
+        return self._list_standard
         
-    def getStandard(self):
+    def get_standard(self):
         return self._standard
         
-    def setStandard(self,standard):
+    def set_standard(self,standard):
         if not isinstance(standard,str):
             raise CocoaTypeError('GeoManager error, the standard argument'
                 ' must be a string') 
-        if standard not in self.getListStandard():
-            raise CocoaKeyError('GeoManager.setSandard error, "'+\
+        if standard not in self.get_list_standard():
+            raise CocoaKeyError('GeoManager.set_standard error, "'+\
                                     standard+' not managed. Please see '\
-                                    'getListStandard() function')
+                                    'get_list_standard() function')
         self._standard=standard
-        return self.getStandard()
+        return self.get_standard()
 
-    def getStandard(self):
+    def get_standard(self):
         return self._standard
     
-    def toStandard(self, w, output='list'):
+    def to_standard(self, w, output='list'):
         """Given a list of string of locations (countries), returns a
         normalised list according to the used standard (defined
         via the setStandard() or __init__ function. Current default is iso2.
