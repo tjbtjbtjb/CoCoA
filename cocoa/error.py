@@ -28,16 +28,6 @@ class CocoaKeyError(CocoaError, KeyError):
         self.message = message
         KeyError(message)
         CocoaError(message)
-
-class CocoaDbError(CocoaError):
-    """Exception raised for database errors.
-
-    Attributes:
-        message -- explanation of the error
-    """
-    def __init__(self, message):
-        self.message = message
-        CocoaError(message)
         
 class CocoaWhereError(CocoaError, IndexError):
     """Exception raised for location errors.
@@ -59,4 +49,37 @@ class CocoaTypeError(CocoaError, TypeError):
     def __init__(self, message):
         self.message = message
         TypeError(message)
-        CocoaError(message)    
+        CocoaError(message)
+        
+class CocoaLookupError(CocoaError, LookupError):
+    """Exception raised for type lookup errors.
+
+    Attributes:
+        message -- explanation of the error
+    """
+    def __init__(self, message):
+        self.message = message
+        LookupError(message)
+        CocoaError(message)
+        
+class CocoaNotManagedError(CocoaError):
+    """Exception raised when the error is unknown and not managed.
+
+    Attributes:
+        message -- explanation of the error
+    """
+    def __init__(self, message):
+        self.message = message
+        CocoaError(message)
+    
+
+class CocoaDbError(CocoaError):
+    """Exception raised for database errors.
+
+    Attributes:
+        message -- explanation of the error
+    """
+    def __init__(self, message):
+        self.message = message
+        CocoaError(message)
+    
