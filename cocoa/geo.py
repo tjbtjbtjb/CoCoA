@@ -24,7 +24,7 @@ class GeoManager():
             'name',           # Standard name ( != Official, caution )
             'num']            # Numeric standard
             
-    _list_db=[None,'JHU','worldometer'] # first is default
+    _list_db=[None,'JHU','worldometers'] # first is default
     _list_output=['list','dict','pandas'] # first is default
     
     _standard = None # currently used normalisation standard
@@ -147,6 +147,7 @@ class GeoManager():
             return None # should not be here
             
     def first_db_translation(self,w,db):
+        translation_dict={}
         if db=='JHU':
             translation_dict={\
                 "Congo (Brazzaville)":"Republic of the Congo",\
@@ -160,5 +161,25 @@ class GeoManager():
                 "Diamond Princess":"",\
                 "MS Zaandam":""           
                     }  # last two are names of boats
-                    
+        elif db=='worldometers':
+            translation_dict={\
+                "DR Congo":"COD",\
+                "Congo":"COG",\
+                "Iran":"IRN",\
+                "South Korea":"KOR",\
+                "North Korea":"PRK",\
+                "Czech Republic (Czechia)":"CZE",\
+                "Laos":"LAO",\
+                "Sao Tome & Principe":"STP",\
+                "Channel Islands":"JEY",\
+                "St. Vincent & Grenadines":"VCT",\
+                "U.S. Virgin Islands":"VIR",\
+                "Saint Kitts & Nevis":"KNA",\
+                "Faeroe Islands":"FRO",\
+                "Caribbean Netherlands":"BES",\
+                "Wallis & Futuna":"WLF",\
+                "Saint Pierre & Miquelon":"SPM",\
+                } 
+                
+                
         return [translation_dict.get(k,k) for k in w]
