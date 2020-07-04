@@ -19,14 +19,22 @@ Countries are named according to https://raw.githubusercontent.com/CSSEGISandDat
             
 import requests
 import pandas
-
+import warnings
+import copy
+from cocoa.error import *
 
 class WorldInfo:
     __pandasData = pandas.DataFrame()
 
     def __init__(self):
         self.__url = "https://www.worldometers.info/world-population/population-by-country/"
-        htmlContent = requests.get(self.__url).content
+        try:
+            htmlContent = requests.get(self.__url).content
+        except:
+            raise CocoaConnectionError('Cannot connect to the database '
+                'worldometers.info. '
+                'Please check your connection or availabilty of the db')
+            
         self.__pandasData = pandas.read_html(htmlContent)[
             0][['Country (or dependency)', 'Population (2020)', 'Land Area (Km²)']]
         self.__pandasData.columns = ['Country', 'Population', 'Area']
@@ -34,7 +42,28 @@ class WorldInfo:
     def getBaseUrl(self):
         return self.__url
 
-    def getData(self):
+    def changeNamingConvention(self, aCountry, **kwargs):
+        if type(aCountry)==list:
+            if kwargs.get('inplace',False) == False:
+                newCountry=aCountry.copy()
+            else:
+                newCountry=aCountry
+        else:
+            newCountry=[aCountry]
+            
+        output=kwargs.get('output', None)
+        for i,c in enumerate(aCountry):
+            if output == 'worldometer':
+                newCountry[i]=c+'w'
+            elif output == 'covid19':
+                newCountry[i]=c+'c'
+            else:
+                warnings.warn("Using default name output, better to force the output type.")
+                newCountry[i]=c
+        
+        return newCountry
+
+    def getData(self, **kwargs):
         return self.__pandasData
 
     def getEUCountries(self):

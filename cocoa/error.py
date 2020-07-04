@@ -83,3 +83,14 @@ class CocoaDbError(CocoaError):
         self.message = message
         CocoaError(message)
     
+class CocoaConnectionError(CocoaError,ConnectionError):
+    """Exception raised for connection errors.
+
+    Attributes:
+        message -- explanation of the error
+    """
+    def __init__(self, message):
+        self.message = message
+        ConnectionError(message)
+        CocoaError(message)
+        
