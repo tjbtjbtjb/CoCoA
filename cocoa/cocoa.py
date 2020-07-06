@@ -40,6 +40,7 @@ import matplotlib.pyplot as plt
 
 import cocoa.world as cowo
 import cocoa.covid19 as coco
+from cocoa.error import * 
 
 # --- Needed global private variables ----------------------------------
 _listwhom=['JHU',    # John Hopkins University first base, default
@@ -82,7 +83,7 @@ def setwhom(base):
     """
     warnings.warn("cocoa.setbase() function not yet fully implemented")
     if base not in listwhom():
-        raise IndexError(base+' is not a supported database. '
+        raise CocoaDbError(base+' is not a supported database. '
             'See cocoa.listbase() for the full list.')
     _db = coco.db(base) 
     return _db.getFields()
@@ -101,7 +102,7 @@ def listwhich(dbname=None):
     if dbname == None:
         dbname=_whom
     if dbname not in listwhom():
-        raise IndexError(dbname+' is not a supported database name. ' 
+        raise CocoaDbError(dbname+' is not a supported database name. ' 
             'See cocoa.listwhom() for the full list.')
     return coco.db(dbname).getFields()
 
@@ -152,12 +153,12 @@ def get(**kwargs):
     output=kwargs.get('output',None)
 
     if not where:
-        raise IndexError('No where keyword given')
+        raise CocoaKeyError('No where keyword given')
 
     if not whom:
         whom=_whom
     elif whom not in listwhom():
-        raise IndexError('Whom option '+whom+' not supported'
+        raise CocoaKeyError('Whom option '+whom+' not supported'
                             'See listwhom() for list.')
     else:
         warnings.warn('whom keyword not yet implemented. Using default')
@@ -165,13 +166,13 @@ def get(**kwargs):
     if not what:
         what=listwhat()[0]
     elif what not in listwhat():
-        raise IndexError('What option '+what+' not supported'
+        raise CocoaKeyError('What option '+what+' not supported'
                             'See listwhat() for list.')
         
     if not which:
         which=listwhich()[0]
     elif which not in listwhich():
-        raise IndexError('Which option '+which+' not supported. '
+        raise CocoaKeyError('Which option '+which+' not supported. '
                             'See listwhich() for list.')
             
     return _p.getStats(which=which,type=what,country=where,output=output)
@@ -199,17 +200,22 @@ def plot(**kwargs):
                 When the 'input' keyword is set, where, what, which,
                 whom keywords are ignored.
     """
-    t=get(**kwargs)
-    
+    t=get(**kwargs,output='pandas')
     #yscale=lin or log…
     
-    lineObjects=plt.plot(t)
+    yscale=kwargs.get('yscale','lin')
+    if yscale=='lin':
+        fplot=plt.plot
+    elif yscale=='log':
+        fplot=plt.semilogy
+    else:
+        raise CocoaKeyError('yscale option "'+yscale+'" is not valid. See help.')
     
-    w=kwargs.get('where')
-    if not isinstance(w,list):
-        w=[w]
-    plt.legend(iter(lineObjects),w)
+    for k in t.country.unique():
+        
+        fplot(t[t.country==k].date,t[t.country==k].cases,label=k)
     
+    plt.legend()
     plt.xlabel('time')
     plt.show()
 

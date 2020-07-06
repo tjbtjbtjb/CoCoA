@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
 
 """ Project : CoCoA
-Date :    april-june 2020
+Date :    april-july 2020
 Authors : Olivier Dadoun, Julien Browaeys, Tristan Beau
 Copyright © CoCoa-team-17
 License: See joint LICENSE file
@@ -19,6 +20,8 @@ from collections import defaultdict
 import numpy as np
 from datetime import datetime as dt
 import pandas as pd
+
+import cocoa.geo as coge
 
 class JHUCSSEdata:
     def __init__(self, **kwargs):
@@ -64,6 +67,8 @@ class db:
 class Parser: # base not used currently
     def __init__(self, d=0):
 
+        self.geo = coge.GeoManager('iso3')
+        
         if not d:
             d = JHUCSSEdata()
 
@@ -85,6 +90,10 @@ class Parser: # base not used currently
 
             for index, row in df[w].iterrows():
                 country = row["Country/Region"]
+
+                # one should convert the full list at once just below…
+                country = self.geo.to_standard(country,output='list',db='JHU')[0]
+                
                 # if country in list(Population_Tab["Country (or dependency)"]) :
                 value = [int(i) if i != '' else -1 for i in
                          row[self.dates[w]].values]
@@ -129,11 +138,14 @@ class Parser: # base not used currently
         return self.diff_days
 
     def getStats(self, **kwargs):
+        
         if not isinstance(kwargs['country'], list):
             clist = [kwargs['country']]
         else:
             clist = kwargs['country']
 
+        clist=self.geo.to_standard(clist,output='list')
+        
         diffout = np.array(
             tuple(dict((c, self.getDiffDays()[kwargs['which']][c]) for c in clist).values()))
         sumout = np.array(tuple(dict(
