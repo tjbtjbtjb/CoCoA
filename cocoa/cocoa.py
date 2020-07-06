@@ -37,6 +37,7 @@ Basic usage
 # --- Imports ----------------------------------------------------------
 import warnings
 import matplotlib.pyplot as plt 
+import pandas as pd
 
 import cocoa.world as cowo
 import cocoa.covid19 as coco
@@ -199,9 +200,16 @@ def plot(**kwargs):
                 function.
                 When the 'input' keyword is set, where, what, which,
                 whom keywords are ignored.
+                input should be given as valid cocoa pandas dataframe.
     """
-    t=get(**kwargs,output='pandas')
-    #yscale=lin or log…
+    input_arg=kwargs.get('input',None)
+    if input_arg != None:
+        if not isinstance(input_arg,pd.DataFrame):
+            raise CocoaTypeError('Waiting input as valid cocoa pandas '
+                'dataframe. See help.')
+        t=input_arg
+    else:
+        t=get(**kwargs,output='pandas')
     
     yscale=kwargs.get('yscale','lin')
     if yscale=='lin':
