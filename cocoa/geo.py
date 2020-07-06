@@ -10,6 +10,7 @@ About :
 
 Geo Management classes within the cocoa framework.
 It provides translations between naming normalisations of countries.
+It's based on the pycountry module
 """
 
 from cocoa.error import *
@@ -18,7 +19,12 @@ import pandas as pd
 import warnings
 
 class GeoManager():
+    """GeoManager class definition. No inheritance from any other class.
     
+    It should raise only CocoaError and derived exceptions in case 
+    of errors (see cocoa.error)
+    """
+
     _list_standard=['iso2',   # Iso2 standard, default
             'iso3',           # Iso3 standard
             'name',           # Standard name ( != Official, caution )
@@ -30,21 +36,39 @@ class GeoManager():
     _standard = None # currently used normalisation standard
     
     def __init__(self,standard=_list_standard[0]):
+        """ __init__ member function, with default definition of 
+        the used standard. To get the current default standard, 
+        see get_list_standard()[0].
+        """
         self.set_standard(standard)
     
     def get_list_standard(self):
+        """ return the list of supported standard name of countries.
+        First one is default for the class
+        """
         return self._list_standard
         
     def get_list_output(self):
+        """ return supported list of output type. First one is default 
+        for the class
+        """
         return self._list_output
         
     def get_list_db(self):
+        """ return supported list of database name for translation of 
+        country names to standard.
+        """
         return self._list_db
         
     def get_standard(self):
+        """ return current standard use within the GeoManager class
+        """
         return self._standard
         
     def set_standard(self,standard):
+        """ set the working standard type within the GeoManager class.
+        The standard should meet the get_list_standard() requirement
+        """
         if not isinstance(standard,str):
             raise CocoaTypeError('GeoManager error, the standard argument'
                 ' must be a string') 
@@ -54,9 +78,6 @@ class GeoManager():
                                     'get_list_standard() function')
         self._standard=standard
         return self.get_standard()
-
-    def get_standard(self):
-        return self._standard
     
     def to_standard(self, w, **kwargs):
         """Given a list of string of locations (countries), returns a
@@ -147,6 +168,13 @@ class GeoManager():
             return None # should not be here
             
     def first_db_translation(self,w,db):
+        """ This function helps to translate from country name to 
+        standard for specific databases. It's the first step
+        before final translation. 
+        
+        One can easily add some database support adding some new rules
+        for specific databases
+        """
         translation_dict={}
         if db=='JHU':
             translation_dict={\
@@ -180,6 +208,5 @@ class GeoManager():
                 "Wallis & Futuna":"WLF",\
                 "Saint Pierre & Miquelon":"SPM",\
                 } 
-                
-                
         return [translation_dict.get(k,k) for k in w]
+        
