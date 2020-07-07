@@ -50,16 +50,10 @@ import altair as alt
 class CocoDisplay():
     def __init__(self, database):
         self.colors =  bokeh.palettes.d3['Category20'][10]
-        self.hover_tool = HoverTool(tooltips=[
-            ('location',"@name"),
-            ('cases', '@cases'),
-            ('date', '@date{%F}')],
-            formatters={'@date': 'datetime'}
-        )
         self.coco_circle = []
         self.coco_line = []
         self.database=database
-        self.p=cc.Parser(database)
+        self.p=cc.DataBase(database)
 
 
     def DefFigStatic(self, **kwargs):
@@ -70,29 +64,33 @@ class CocoDisplay():
         panels = []
         option = kwargs.get('option', None)
         if option == 'nonneg':
-            babypandas = self.p.getStats(location=clist, type=kwargs['type'], which=kwargs['which'],
+            babypandas = self.p.get_stats(location=clist, type=kwargs['type'], which=kwargs['which'],
                                          output='pandas', option='nonneg')
-        else:
-            babypandas = self.p.getStats(
-                location=clist, type=kwargs['type'], which=kwargs['which'], output='pandas')
 
-        data = pd.pivot_table(babypandas, index='date',
-                              columns='location', values='cases').reset_index()
+        else:
+            babypandas = self.p.get_stats(location=clist, type=kwargs['type'], which=kwargs['which'],
+                                         output='pandas')
+
+        self.cocoa_pandas = babypandas
+
         for axis_type in ["linear", "log"]:
-            fig = figure(plot_width=600, plot_height=400, y_axis_type=axis_type,
+            self.hover_tool = HoverTool(tooltips=[
+                        ('location',"@location"),
+                        (kwargs['which'], '@'+kwargs['which']),
+                        ('date', '@date{%F}')],
+                        formatters={'@date': 'datetime'}
+            )
+            fig = figure(plot_width=600, plot_height=400, y_axis_type=axis_type, x_axis_type="datetime",
                          tools=[self.hover_tool, 'box_zoom,box_select,crosshair,reset'])
             fig.xaxis.formatter = DatetimeTickFormatter(
                 days=["%d %B %Y"], months=["%d %B %Y"], years=["%d %B %Y"])
 
             i = 0
             for coun in sorted(clist):
-                filter_data = data[['date', coun]].rename(
-                    columns={coun: 'cases'})
                 name=coun
-                filter_data['name']=[name]*len(data[['date',coun]])
-                src = ColumnDataSource(filter_data)
-                fig.line(x='date', y='cases', source=src,\
-                    line_color=self.colors[i%10], legend_label=coun, line_width=2,name=coun)
+                filter_data = babypandas.loc[babypandas['location']==coun]
+                src=ColumnDataSource(filter_data)
+                fig.line(x='date', y=kwargs['which'], source=src,line_color=self.colors[i%10], legend_label=coun, line_width=2,name=coun)
                 i += 1
             fig.legend.location = "top_left"
             if kwargs['which'] == 'confirmed' and self.database == 'aphp':
@@ -106,6 +104,7 @@ class CocoDisplay():
         return tabs
 
     def DefFigInteractive(self, **kwargs):
+        ''' Define interactive bokeh figure i.e with a window location selection'''
         if not isinstance(kwargs['location'], list):
             clist = [kwargs['location']]
         else:
@@ -115,39 +114,47 @@ class CocoDisplay():
         curvos = []
         option = kwargs.get('option', None)
         if option == 'nonneg':
-            babypandas = self.p.getStats(location=clist, type=kwargs['type'], which=kwargs['which'],
+            babypandas = self.p.get_stats(location=clist, type=kwargs['type'], which=kwargs['which'],
                                          output='pandas', option='nonneg')
         else:
-            babypandas = self.p.getStats(
-                location=clist, type=kwargs['type'], which=kwargs['which'], output='pandas')
+            babypandas = self.p.get_stats(location=clist, type=kwargs['type'], which=kwargs['which'],
+                                         output='pandas')
 
-        data = pd.pivot_table(babypandas, index='date',
-                              columns='location', values='cases').reset_index()
+        self.cocoa_pandas = babypandas
+                                         
+        data = pd.pivot_table(babypandas, index='date',columns='location', values=kwargs['which']).reset_index()
         filter_data1 = data[['date', clist[0]]].rename(
-            columns={clist[0]: 'cases'})
-        name=clist[0]
-        filter_data1['name']=[name]*len(data[['date',clist[0]]])
+            columns={clist[0]: kwargs['which']})
+        name1=clist[0]
+        filter_data1['location']=[name1]*len(data[['date',clist[0]]])
         src1 = ColumnDataSource(filter_data1)
 
         filter_data2 = data[['date', clist[1]]].rename(
-            columns={clist[1]: 'cases'})
+            columns={clist[1]: kwargs['which']})
         name2=clist[1]
-        filter_data2['name']=[name2]*len(data[['date',clist[1]]])
+        filter_data2['location']=[name2]*len(data[['date',clist[1]]])
+        print('--->',filter_data2[kwargs['which']])
         src2 = ColumnDataSource(filter_data2)
 
+        self.hover_tool = HoverTool(tooltips=[
+                        ('location',"@location"),
+                        (kwargs['which'], '@'+kwargs['which']),
+                        ('date', '@date{%F}')],
+                        formatters={'@date': 'datetime'}
+            )
         for axis_type in ["linear", "log"]:
-            fig = figure(plot_width=600, plot_height=400, y_axis_type=axis_type,
+            fig = figure(plot_width=600, plot_height=400, y_axis_type=axis_type, x_axis_type="datetime",
                          tools=[self.hover_tool, 'box_zoom,box_select,crosshair,reset'])
 
             fig.xaxis.formatter = DatetimeTickFormatter(
                 days=["%d %B %Y"], months=["%d %B %Y"], years=["%d %B %Y"])
 
-            fig.circle('date', 'cases', size=7, color='red', source=src1,name=name)
-            fig.line(x='date', y='cases', source=src1,
+            fig.circle('date',kwargs['which'], size=7, color='red', source=src1,name=name1)
+            fig.line(x='date', y=kwargs['which'], source=src1,
                      line_color='red', line_width=3, line_alpha=.8)
 
-            fig.circle('date', 'cases', size=7, color='blue', source=src2,name=name2)
-            fig.line(x='date', y='cases', source=src2,
+            fig.circle('date',kwargs['which'], size=7, color='blue', source=src2,name=name2)
+            fig.line(x='date', y=kwargs['which'], source=src2,
                      line_color='blue', line_width=3, line_alpha=.8)
 
             if kwargs['which'] == 'confirmed' and self.database == 'aphp':
@@ -161,34 +168,29 @@ class CocoDisplay():
 
             panel = Panel(child=fig, title=axis_type)
             panels.append(panel)
+
         code="""
       var c = cb_obj.value;
       var y = s0.data[c];
       for (var i = 0; i < y.length; i++) {
-        s1.data['name'][i]=c
+        s1.data['location'][i]=c
         }
-      s1.data['cases'] = y;
+      s1.data[val] = y;
       s1.change.emit();
       ax=p1.yaxis[0]
       """
 
         source = ColumnDataSource(data)
-        callback1 = CustomJS(args=dict(s0=source, s1=src1), code=code)
-        callback2 = CustomJS(args=dict(s0=source, s1=src2), code=code)
+        callback1 = CustomJS(args=dict(s0=source, s1=src1,val=kwargs['which']), code=code)
+        callback2 = CustomJS(args=dict(s0=source, s1=src2,val=kwargs['which']), code=code)
 
-        select_countries1 = Select(
-            title="RED CURVE:", value=clist[0], options=clist)
-
+        select_countries1 = Select(title="RED CURVE:", value=clist[0], options=clist)
         select_countries1.js_on_change('value', callback1)
 
-        select_countries2 = Select(
-            title="BLUE CURVE", value=clist[1], options=clist)
+        select_countries2 = Select(title="BLUE CURVE", value=clist[1], options=clist)
         select_countries2.js_on_change('value', callback2)
-
         tabs = Tabs(tabs=panels)
-
-        layout = row(
-            column(row(select_countries1, select_countries2), row(tabs)))
+        layout = row(column(row(select_countries1, select_countries2), row(tabs)))
         return layout
 
     def CrystalFig(self, crys, err_y):
@@ -234,7 +236,7 @@ class CocoDisplay():
                     fig.xaxis.major_label_orientation = math.pi/4
                     fig.xaxis.ticker.desired_num_ticks = 10
 
-                    # tot_type_country=self.p.getStats(country=country,type='Cumul',which='deaths')[-1]
+                    # tot_type_country=self.p.get_stats(country=country,type='Cumul',which='deaths')[-1]
 
                     fig.legend.location = "top_left"
                     fig.legend.title_text_font_style = "bold"
@@ -247,6 +249,10 @@ class CocoDisplay():
                     i += 1
         fig = gridplot(sline)
         return fig
+
+    def get_pandas(self):
+        ''' Retrieve the pandas when CoCoDisplay is called '''
+        return self.cocoa_pandas
 
     def __delete__(self, instance):
         print("deleted in descriptor object")
@@ -264,7 +270,7 @@ class WorldMapDisplay():
         self.countries = sorted(countries)
         self.which_data = which_data
         p = cc.Parser()
-        babypandas = (p.getStats(location=self.countries,type=cumul_or_diff,
+        babypandas = (p.get_stats(location=self.countries,type=cumul_or_diff,
                                  which=which_data, output='pandas'))
         babypandascumul = babypandas
         babypandascumul['cumul'] = babypandas.groupby(
