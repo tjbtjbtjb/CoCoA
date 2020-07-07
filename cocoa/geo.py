@@ -8,15 +8,25 @@ License: See joint LICENSE file
 Module : cocoa.geo
 About : 
 
-Geo Management classes within the cocoa framework.
-It provides translations between naming normalisations of countries.
-It's based on the pycountry module
+Geo classes within the cocoa framework.
+
+GeoManager class provides translations between naming normalisations 
+of countries. It's based on the pycountry module.
+
+GeoInfo class allow to add new fields to a pandas DataFrame about
+statistical information for countries. 
 """
 
 from cocoa.error import *
 import pycountry as pc
+import pycountry_convert as pcc
 import pandas as pd
 import warnings
+from copy import copy
+
+# ---------------------------------------------------------------------
+# --- GeoManager class ------------------------------------------------
+# ---------------------------------------------------------------------
 
 class GeoManager():
     """GeoManager class definition. No inheritance from any other class.
@@ -210,3 +220,96 @@ class GeoManager():
                 } 
         return [translation_dict.get(k,k) for k in w]
         
+# ---------------------------------------------------------------------
+# --- GeoInfo class ---------------------------------------------------
+# ---------------------------------------------------------------------
+        
+class GeoInfo():
+    """GeoInfo class definition. No inheritance from any other class.
+    
+    It should raise only CocoaError and derived exceptions in case 
+    of errors (see cocoa.error)
+    """
+
+    _list_field={\
+        'continent_code':'pycountry_convert (https://pypi.org/project/pycountry-convert/)',\
+        'continent_name':'pycountry_convert (https://pypi.org/project/pycountry-convert/)' ,\
+        'country_name':'pycountry_convert (https://pypi.org/project/pycountry-convert/)' ,\
+        'population':'truc',\
+        'surface':'bidule'}
+    
+    def __init__(self):
+        """ __init__ member function.
+        """
+        self._g=GeoManager('iso2')
+
+    def get_list_field(self):
+        """ return the list of supported additionnal fields available
+        """
+        return list(self._list_field.keys())
+        
+    def get_source(self,field):
+        """ return the source of the information provided for a given
+        field.
+        """
+        if field not in self.get_list_field():
+            raise CocoaKeyError('The field "'+str(field)+'" is not '
+                'a supported field of GeoInfo(). Please see help or '
+                'the get_list_field() output.')
+        return field+' : '+self._list_field[field]
+        
+    def add_field(self,**kwargs):
+        """ this is the main function of the GeoInfo class. It adds to 
+        the input pandas dataframe some fields according to 
+        the country field of input. 
+        The return value is the pandas dataframe.
+        
+        Arguments :
+        field    -- should be given as a string of list of strings and 
+                    should be valid fields (see get_list_field() )
+                    Mandatory.
+        input    -- provide the input pandas dataframe. Mandatory.
+        geofield -- provide the field name in the pandas where the
+                    location is stored. Default : 'country'
+        """
+        p=kwargs.get('input',None).copy() # the panda
+        if not isinstance(p,pd.DataFrame):
+            raise CocoaTypeError('You should provide a valid input pandas'
+                ' DataFrame as input. See help.')
+        
+        fl=kwargs.get('field',None) # field list
+        if fl == None:
+            raise CocoaKeyError('No field given. See help.')
+        if not isinstance(fl,list):
+            fl=[fl]
+        if not all(f in self.get_list_field() for f in fl):
+            raise CocoaKeyError('All fields are not valid or supported '
+                'ones. Please see help of get_list_field()')
+        if not all(f not in p.columns.tolist() for f in fl):
+            raise CocoaKeyError('Some fields already exist in you panda '
+                'dataframe columns. ')
+                
+        geofield=kwargs.get('geofield','country')
+        if not isinstance(geofield,str):
+            raise CocoaTypeError('The geofield should be given as a '
+                'string.')
+        if geofield not in p.columns.tolist():
+            raise CocoaKeyError('The geofield "'+geofield+'" given is '
+                'not a valid column name of the input pandas dataframe.')
+                
+        countries=self._g.to_standard(p[geofield].tolist())
+
+        for f in fl:
+            if f == 'continent_code':
+                p[f] = [pcc.country_alpha2_to_continent_code(k) for k in countries]
+            elif f == 'continent_name':
+                p[f] = [pcc.convert_continent_code_to_continent_name( \
+                    pcc.country_alpha2_to_continent_code(k)) for k in countries]
+            elif f == 'country_name':
+                p[f] = [pcc.country_alpha2_to_country_name(k) for k in countries]
+            elif f == 'population':
+                p[f] = [0 for k in countries]
+            elif f == 'surface':
+                p[f] = [0 for k in countries]
+                
+        return p
