@@ -195,26 +195,7 @@ class Parser: # base not used currently
                     )
                     i += 1
             babypandas = pd.DataFrame(d)
-            corresp={"US":"United States of America",#United States
-                "Bahamas":"The Bahamas",#Bahamas
-                "Cote d'Ivoire":"Ivory Coast",#	Côte d'Ivoire
-                "Czechia":"Czech Republic",#	Czech Republic (Czechia)
-                "Guinea-Bissau":"Guinea Bissau",# 	Guinea-Bissau
-                "Korea, South":"South Korea",#	South Korea
-                "North Macedonia":"Macedonia",# North Macedonia
-                "Serbia":"Republic of Serbia",# Serbia
-                "Eswatini":"Swaziland",#   	Eswatini
-                "Timor-Leste":"East Timor",#  Timor-Leste
-                "Taiwan*":"Taiwan", # ***
-                "Tanzania":"United Republic of Tanzania", #  Tanzania
-                "West Bank and Gaza":"West Bank", # NO
-                "Burma":"Myanmar",# ***
-                "Congo (Brazzaville)":"Republic of the Congo",# Congo
-                "Congo (Kinshasa)":"Democratic Republic of the Congo"# ***DR Congo
-            }
-            for k,v in corresp.items():    
-                babypandas.loc[babypandas["country"]==k,["country"]]=v
-                
+       
             return babypandas
         else:
             if out.shape[0] == 1:
