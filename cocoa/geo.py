@@ -17,12 +17,16 @@ GeoInfo class allow to add new fields to a pandas DataFrame about
 statistical information for countries. 
 """
 
-from cocoa.error import *
+from copy import copy
+import warnings
+
 import pycountry as pc
 import pycountry_convert as pcc
 import pandas as pd
-import warnings
-from copy import copy
+import geopandas as gpd
+import requests
+
+from cocoa.error import *
 
 # ---------------------------------------------------------------------
 # --- GeoManager class ------------------------------------------------
@@ -112,7 +116,7 @@ class GeoManager():
             
         db=kwargs.get('db',self.get_list_db()[0])
         if db not in self.get_list_db():
-            raise CocoaDbError('Unknown database for translation to '
+            raise CocoaDbError('Unknown database "'+db+'" for translation to '
                 'standardized location names. See get_list_db() or help.')
         
         w0=w
@@ -217,6 +221,7 @@ class GeoManager():
                 "Caribbean Netherlands":"BES",\
                 "Wallis & Futuna":"WLF",\
                 "Saint Pierre & Miquelon":"SPM",\
+                "Sint Maarten":"SXM",\
                 } 
         return [translation_dict.get(k,k) for k in w]
         
@@ -235,18 +240,22 @@ class GeoInfo():
         'continent_code':'pycountry_convert (https://pypi.org/project/pycountry-convert/)',\
         'continent_name':'pycountry_convert (https://pypi.org/project/pycountry-convert/)' ,\
         'country_name':'pycountry_convert (https://pypi.org/project/pycountry-convert/)' ,\
-        'population':'truc',\
-        'surface':'bidule'}
+        'population':'https://www.worldometers.info/world-population/population-by-country/',\
+        'area':'https://www.worldometers.info/world-population/population-by-country/',\
+        'geometry':'https://github.com/johan/world.geo.json/'}
+    
+    _data_geometry = pd.DataFrame()
+    _data_population = pd.DataFrame()
     
     def __init__(self):
         """ __init__ member function.
         """
-        self._g=GeoManager('iso2')
+        self._g=GeoManager()
 
     def get_list_field(self):
         """ return the list of supported additionnal fields available
         """
-        return list(self._list_field.keys())
+        return sorted(list(self._list_field.keys()))
         
     def get_source(self,field):
         """ return the source of the information provided for a given
@@ -271,11 +280,19 @@ class GeoInfo():
         input    -- provide the input pandas dataframe. Mandatory.
         geofield -- provide the field name in the pandas where the
                     location is stored. Default : 'country'
+        overload -- Allow to overload a field. Boolean value. 
+                    Default : False
         """
+        
+        # --- kwargs analysis ---
         p=kwargs.get('input',None).copy() # the panda
         if not isinstance(p,pd.DataFrame):
             raise CocoaTypeError('You should provide a valid input pandas'
                 ' DataFrame as input. See help.')
+                
+        overload=kwargs.get('overload',False)
+        if not isinstance(overload,bool):
+            raise CocoaTypeError('The overload option should be a boolean.')
         
         fl=kwargs.get('field',None) # field list
         if fl == None:
@@ -285,10 +302,11 @@ class GeoInfo():
         if not all(f in self.get_list_field() for f in fl):
             raise CocoaKeyError('All fields are not valid or supported '
                 'ones. Please see help of get_list_field()')
-        if not all(f not in p.columns.tolist() for f in fl):
-            raise CocoaKeyError('Some fields already exist in you panda '
-                'dataframe columns. ')
                 
+        if not overload and not all(f not in p.columns.tolist() for f in fl):
+            raise CocoaKeyError('Some fields already exist in you panda '
+                'dataframe columns. You may set overload to True.')
+            
         geofield=kwargs.get('geofield','country')
         if not isinstance(geofield,str):
             raise CocoaTypeError('The geofield should be given as a '
@@ -297,19 +315,64 @@ class GeoInfo():
             raise CocoaKeyError('The geofield "'+geofield+'" given is '
                 'not a valid column name of the input pandas dataframe.')
                 
-        countries=self._g.to_standard(p[geofield].tolist())
+        self._g.set_standard('iso2')
+        countries_iso2=self._g.to_standard(p[geofield].tolist())
+        self._g.set_standard('iso3')
+        countries_iso3=self._g.to_standard(p[geofield].tolist())
 
+        p['iso2_tmp']=countries_iso2
+        p['iso3_tmp']=countries_iso3   
+         
+        # --- loop over all needed fields ---
         for f in fl:
+            if f in p.columns.tolist():
+                p=p.drop(f,axis=1) 
+            # ----------------------------------------------------------
             if f == 'continent_code':
-                p[f] = [pcc.country_alpha2_to_continent_code(k) for k in countries]
+                p[f] = [pcc.country_alpha2_to_continent_code(k) for k in countries_iso2]
+            # ----------------------------------------------------------
             elif f == 'continent_name':
                 p[f] = [pcc.convert_continent_code_to_continent_name( \
-                    pcc.country_alpha2_to_continent_code(k)) for k in countries]
+                    pcc.country_alpha2_to_continent_code(k)) for k in countries_iso2]
+            # ----------------------------------------------------------
             elif f == 'country_name':
-                p[f] = [pcc.country_alpha2_to_country_name(k) for k in countries]
-            elif f == 'population':
-                p[f] = [0 for k in countries]
-            elif f == 'surface':
-                p[f] = [0 for k in countries]
+                p[f] = [pcc.country_alpha2_to_country_name(k) for k in countries_iso2]
+            # ----------------------------------------------------------
+            elif f == 'population' or f == 'area':
+                if self._data_population.empty:
+                    url_worldometers="https://www.worldometers.info/world-population/population-by-country/"
+                    try:
+                        htmlContent = requests.get(url_worldometers).content
+                    except:
+                        raise CocoaConnectionError('Cannot connect to the database '
+                                'worldometers.info. '
+                                'Please check your connection or availabilty of the db')
+                    
+                    self._data_population = pd.read_html(htmlContent)[0].iloc[:,[0,1,2,6]]
+                    self._data_population.columns = ['idx', 'country','population', 'area']
+                    self._data_population['iso3_tmp2']=\
+                        self._g.to_standard(self._data_population['country'].tolist(),\
+                        db='worldometers')
                 
-        return p
+                p=p.merge(self._data_population[["iso3_tmp2",f]],how='left',\
+                        left_on='iso3_tmp',right_on='iso3_tmp2',\
+                        suffixes=('','_tmp')).drop(['iso3_tmp2'],axis=1)
+            # ----------------------------------------------------------
+            elif f == 'geometry':
+                if self._data_geometry.empty:
+                    geojsondatafile = 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json'    
+                    try:
+                        self._data_geometry = gpd.read_file(geojsondatafile)[["id","geometry"]]
+                        self._data_geometry.columns=["id_tmp","geometry"]
+                        # countains id as iso3 , country name , geometry
+                    except:
+                        raise CocoaConnectionError('Cannot access to the '
+                            'geo json data for countries. '
+                            'Check internet connection.')
+                         
+                p=p.merge(self._data_geometry,how='left',\
+                    left_on='iso3_tmp',right_on='id_tmp',\
+                    suffixes=('','_tmp')).drop(['id_tmp'],axis=1)    
+
+        return p.drop(['iso2_tmp','iso3_tmp'],axis=1)
+        
