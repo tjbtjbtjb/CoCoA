@@ -15,6 +15,8 @@ of countries. It's based on the pycountry module.
 
 GeoInfo class allow to add new fields to a pandas DataFrame about
 statistical information for countries. 
+
+GeoRegion class helps returning list of countries in a specified region
 """
 
 from copy import copy
@@ -191,7 +193,7 @@ class GeoManager():
         """
         translation_dict={}
         if db=='JHU':
-            translation_dict={\
+            translation_dict.update({\
                 "Congo (Brazzaville)":"Republic of the Congo",\
                 "Congo (Kinshasa)":"COD",\
                 "Korea, South":"KOR",\
@@ -202,9 +204,9 @@ class GeoManager():
                 "Iran":"IRN",\
                 "Diamond Princess":"",\
                 "MS Zaandam":""           
-                    }  # last two are names of boats
+                    })  # last two are names of boats
         elif db=='worldometers':
-            translation_dict={\
+            translation_dict.update({\
                 "DR Congo":"COD",\
                 "Congo":"COG",\
                 "Iran":"IRN",\
@@ -222,7 +224,7 @@ class GeoManager():
                 "Wallis & Futuna":"WLF",\
                 "Saint Pierre & Miquelon":"SPM",\
                 "Sint Maarten":"SXM",\
-                } 
+                } )
         return [translation_dict.get(k,k) for k in w]
         
 # ---------------------------------------------------------------------
@@ -242,6 +244,9 @@ class GeoInfo():
         'country_name':'pycountry_convert (https://pypi.org/project/pycountry-convert/)' ,\
         'population':'https://www.worldometers.info/world-population/population-by-country/',\
         'area':'https://www.worldometers.info/world-population/population-by-country/',\
+        'fertility':'https://www.worldometers.info/world-population/population-by-country/',\
+        'median_age':'https://www.worldometers.info/world-population/population-by-country/',\
+        'urban_rate':'https://www.worldometers.info/world-population/population-by-country/',\
         'geometry':'https://github.com/johan/world.geo.json/'}
     
     _data_geometry = pd.DataFrame()
@@ -338,7 +343,7 @@ class GeoInfo():
             elif f == 'country_name':
                 p[f] = [pcc.country_alpha2_to_country_name(k) for k in countries_iso2]
             # ----------------------------------------------------------
-            elif f == 'population' or f == 'area':
+            elif f in ['population','area','fertility','median_age','urban_rate']:
                 if self._data_population.empty:
                     url_worldometers="https://www.worldometers.info/world-population/population-by-country/"
                     try:
@@ -348,8 +353,27 @@ class GeoInfo():
                                 'worldometers.info. '
                                 'Please check your connection or availabilty of the db')
                     
-                    self._data_population = pd.read_html(htmlContent)[0].iloc[:,[0,1,2,6]]
-                    self._data_population.columns = ['idx', 'country','population', 'area']
+                    field_descr=( (0,'','idx'),
+                        (1,'Country','country'),
+                        (2,'Population','population'),
+                        (6,'Land Area','area'),
+                        (8,'Fert','fertility'),
+                        (9,'Med','median_age'),
+                        (10,'Urban','urban_rate'),
+                        ) # containts tuples with position in table, name of column, new name of field
+                     
+                    # get data
+                    self._data_population = pd.read_html(htmlContent)[0].iloc[:,[x[0] for x in field_descr]]
+                
+                    # test that field order hasn't changed in the db
+                    if not all (col.startswith(field_descr[i][1]) for i,col in enumerate(self._data_population.columns) ):
+                        raise CocoaDbError('The worldometers database changed its field names. '
+                            'The GeoInfo should be updated. Please contact developers.')
+                            
+                    # change field name
+                    self._data_population.columns = [x[2] for x in field_descr]
+                    
+                    # standardization of country name
                     self._data_population['iso3_tmp2']=\
                         self._g.to_standard(self._data_population['country'].tolist(),\
                         db='worldometers')
@@ -357,6 +381,7 @@ class GeoInfo():
                 p=p.merge(self._data_population[["iso3_tmp2",f]],how='left',\
                         left_on='iso3_tmp',right_on='iso3_tmp2',\
                         suffixes=('','_tmp')).drop(['iso3_tmp2'],axis=1)
+                        
             # ----------------------------------------------------------
             elif f == 'geometry':
                 if self._data_geometry.empty:
@@ -375,4 +400,56 @@ class GeoInfo():
                     suffixes=('','_tmp')).drop(['id_tmp'],axis=1)    
 
         return p.drop(['iso2_tmp','iso3_tmp'],axis=1)
+      
+# ---------------------------------------------------------------------
+# --- GeoInfo class ---------------------------------------------------
+# ---------------------------------------------------------------------
+
+from pycountry_convert.convert_continent_code_to_continent_name import CONTINENT_CODE_TO_CONTINENT_NAME
+from pycountry_convert.convert_country_alpha2_to_continent_code import COUNTRY_ALPHA2_TO_CONTINENT_CODE
+
+class GeoRegion():
+    """GeoRegion class definition. Does not inheritate from any other 
+    class.
+    
+    It should raise only CocoaError and derived exceptions in case 
+    of errors (see cocoa.error)
+    """
+    
+    _region_list=CONTINENT_CODE_TO_CONTINENT_NAME
+    _country_list=COUNTRY_ALPHA2_TO_CONTINENT_CODE
+    
+    def __init__(self,):
+        """ __init__ member function.
+        """
+        self._region_list.update({"UE":"European Union","WW":"Whole world"})
+        if 'XK' in self._country_list: 
+            del self._country_list['XK'] # creates bugs in pycountry and is currently a contested country as country
         
+    def get_region_list(self):
+        """ it returns the list of supported region name.
+        """
+        return self._region_list
+        
+    def get_countries_from_region(self,region):
+        """ it returns a list of countries for the given region name.
+        The standard used is iso2. To convert to another standard, 
+        use the GeoManager class.
+        """
+        if region not in self.get_region_list():
+            raise CocoaKeyError('The given region "'+str(region)+'" is unknown.')
+            
+        clist=[]
+        if region=='UE':
+            clist=sorted(['AT', 'BE', 'HR', 'BG', 'CY', 'CZ', 'DK', \
+                        'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', \
+                        'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', \
+                        'PT', 'RO', 'SK', 'SI', 'ES', 'SE'])
+        elif region=='WW':
+            clist=sorted(list(COUNTRY_ALPHA2_TO_CONTINENT_CODE.keys()))
+        else:
+            for k,r in COUNTRY_ALPHA2_TO_CONTINENT_CODE.items():
+                if r==region:
+                    clist.append(k)
+        
+        return clist
