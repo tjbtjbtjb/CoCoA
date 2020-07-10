@@ -322,5 +322,6 @@ def map(**kwargs):
     f.add_layout(color_bar, 'below')
 
     #Display figure.
-    return f
+    output_notebook()
+    show(f)
     
