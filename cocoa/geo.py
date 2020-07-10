@@ -57,6 +57,7 @@ class GeoManager():
         see get_list_standard()[0].
         """
         self.set_standard(standard)
+        self._gr=GeoRegion()
     
     def get_list_standard(self):
         """ return the list of supported standard name of countries.
@@ -133,46 +134,51 @@ class GeoManager():
                 
         n=[] # will contain standardized name of countries (if possible)
         
-        for c in w:
+        #for c in w:
+        while len(w)>0:
+            c=w.pop(0)
             if type(c)==int:
                 c=str(c)
             elif type(c)!=str:
                 raise CocoaTypeError('Locations should be given as '
                     'strings or integers only')
             
-            if len(c)==0:
-                n1=None
+            if c in self._gr.get_region_list():
+                w=self._gr.get_countries_from_region(c)+w
             else:
-                try:
-                    n0=pc.countries.lookup(c)
-                except LookupError:
+                if len(c)==0:
+                    n1=None 
+                else: 
                     try:
-                        nf=pc.countries.search_fuzzy(c)
-                        if len(nf)>1:
-                            warnings.warn('Caution. More than one country match the key "'+\
-                            c+'" : '+str([ (k.name+', ') for k in nf])+\
-                            ', using first one.\n')
-                        n0=nf[0]
+                        n0=pc.countries.lookup(c)
                     except LookupError:
-                        raise CocoaLookupError('No country match the key "'+c+'". Error.')
-                    except Exception as e1:
-                        raise CocoaNotManagedError('Not managed error '+type(e1))
-                except Exception as e2:
-                    raise CocoaNotManagedError('Not managed error'+type(e1))
-                
-                if self._standard=='iso2':
-                    n1=n0.alpha_2
-                elif self._standard=='iso3':
-                    n1=n0.alpha_3
-                elif self._standard=='name':
-                    n1=n0.name
-                elif self._standard=='num':
-                    n1=n0.numeric
-                else:
-                    raise CocoaKeyError('Current standard is '+self._standard+\
-                        ' which is not managed. Error.')
+                        try:
+                            nf=pc.countries.search_fuzzy(c)
+                            if len(nf)>1:
+                                warnings.warn('Caution. More than one country match the key "'+\
+                                c+'" : '+str([ (k.name+', ') for k in nf])+\
+                                ', using first one.\n')
+                            n0=nf[0]
+                        except LookupError:
+                            raise CocoaLookupError('No country match the key "'+c+'". Error.')
+                        except Exception as e1:
+                            raise CocoaNotManagedError('Not managed error '+type(e1))
+                    except Exception as e2:
+                        raise CocoaNotManagedError('Not managed error'+type(e1))
                     
-            n.append(n1)
+                    if self._standard=='iso2':
+                        n1=n0.alpha_2
+                    elif self._standard=='iso3':
+                        n1=n0.alpha_3
+                    elif self._standard=='name':
+                        n1=n0.name
+                    elif self._standard=='num':
+                        n1=n0.numeric
+                    else:
+                        raise CocoaKeyError('Current standard is '+self._standard+\
+                            ' which is not managed. Error.')
+                        
+                n.append(n1)
             
         if output=='list':
             return n
@@ -266,11 +272,13 @@ class GeoInfo():
         """
         return sorted(list(self._list_field.keys()))
         
-    def get_source(self,field):
+    def get_source(self,field=None):
         """ return the source of the information provided for a given
         field.
         """
-        if field not in self.get_list_field():
+        if field==None:
+            return self._list_field
+        elif field not in self.get_list_field():
             raise CocoaKeyError('The field "'+str(field)+'" is not '
                 'a supported field of GeoInfo(). Please see help or '
                 'the get_list_field() output.')
@@ -471,7 +479,7 @@ class GeoRegion():
         self._p_gs=self._p_gs.merge(p_m49,how='left',left_on='region',\
                             right_on='code').drop(["code"],axis=1)
         
-    def get_source(selft):
+    def get_source(self):
         return self._source_dict
         
     def get_region_list(self):
