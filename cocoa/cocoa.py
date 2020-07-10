@@ -36,6 +36,7 @@ Basic usage
 
 # --- Imports ----------------------------------------------------------
 import warnings
+from copy import copy
 import matplotlib.pyplot as plt 
 import pandas as pd
 import geopandas as gpd
@@ -59,6 +60,7 @@ _whom = _listwhom[0] # default base
 _db = coco.db()
 _p = coco.Parser()     # will be the parser (pseudo) private variable
 _info = coge.GeoInfo() # will be the info (pseudo) private variable
+_reg = coge.GeoRegion()
 
 _listwhat=['Cumul','Diff','cumul',  # first one is default but we must avoid uppercases
             'daily',
@@ -279,12 +281,21 @@ def map(**kwargs):
     """Create a map according to arguments and options. 
     See help(hist).
     """
+    wlist=copy(kwargs.get('where',None))
     p=get(**kwargs,output='pandas')
     lastdate=p["date"].max()
     p=gpd.GeoDataFrame(_info.add_field(input=p[p["date"]==lastdate],\
-        geofield='country',field=['geometry','country_name'])[["cases","geometry","country_name"]])
+        geofield='country',field=['geometry','country_name'])[["cases","geometry","country_name","country"]])
 
-    p=p[p['geometry']!=None]
+    p=p[p['geometry']!=None] # if some countries does not have an available geometry
+    
+    for k in wlist:
+        if k in _reg.get_region_list():
+            k_lst=_reg.get_countries_from_region(k)
+            p.loc[p["country"].isin(k_lst),"country_name"]=k
+            p=p.dissolve(aggfunc='sum',by='country_name') # merge the geometry and sum the cases for region
+
+    p["cname"]=p.index
 
     #Read data to json
     merged_json = json.loads(p.to_json())
@@ -296,7 +307,7 @@ def map(**kwargs):
     #Define a sequential multi-hue color palette.
     palette = brewer['RdYlGn'][10] # see https://docs.bokeh.org/en/latest/docs/reference/palettes.html
 
-    hover = HoverTool(tooltips = [ ('Country','@country_name'),
+    hover = HoverTool(tooltips = [ ('Country','@cname'),
                               ('Cases', '@cases') ] )
 
     #Instantiate LinearColorMapper that linearly maps numbers in a range, into a sequence of colors.
