@@ -38,10 +38,18 @@ Basic usage
 import warnings
 import matplotlib.pyplot as plt 
 import pandas as pd
+import geopandas as gpd
 
 import cocoa.world as cowo
 import cocoa.covid19 as coco
+import cocoa.geo as coge
 from cocoa.error import * 
+
+from bokeh.io import output_notebook, show, output_file
+from bokeh.plotting import figure
+from bokeh.models import GeoJSONDataSource, LinearColorMapper, ColorBar, HoverTool
+from bokeh.palettes import brewer
+import json
 
 # --- Needed global private variables ----------------------------------
 _listwhom=['JHU',    # John Hopkins University first base, default
@@ -49,7 +57,8 @@ _listwhom=['JHU',    # John Hopkins University first base, default
 _whom = _listwhom[0] # default base
 
 _db = coco.db()
-_p = coco.Parser()   # will be the parser (pseudo) private variable
+_p = coco.Parser()     # will be the parser (pseudo) private variable
+_info = coge.GeoInfo() # will be the info (pseudo) private variable
 
 _listwhat=['Cumul','Diff','cumul',  # first one is default but we must avoid uppercases
             'daily',
@@ -71,6 +80,16 @@ def listwhom():
     """
     return _listwhom
 
+# ----------------------------------------------------------------------
+# --- listwhat() -------------------------------------------------------
+# ----------------------------------------------------------------------
+
+def listwhat():
+    """Return the list of currently avalailable type of series available.
+     The first one is the default one.
+    """
+    return _listwhat
+    
 # ----------------------------------------------------------------------
 # --- setwhom() --------------------------------------------------------
 # ----------------------------------------------------------------------
@@ -135,14 +154,15 @@ def get(**kwargs):
     where  --   a single string of location, or list of (mandatory, 
                 no default value)
     what   --   what sort of data to deliver ( 'death','confirmed',
-                'recovered' …). See getwhat() function for full
+                'recovered' …). See listwhat() function for full
                 list according to the used database.
     which  --   which data are computed, either in cumulative mode 
                 ( 'cumul', default value) or 'daily' or other. See 
-                getwhich() for fullist of available 
-                Full list of which keyword with the 
+                listwhich() for fullist of available 
+                Full list of which keyword with the listwhich() function.
     whom   --   Database specification (overload the setbase() 
-                function)
+                function). See listwhom() for supported list
+                function). See listwhom() for supported list
              
     output --   output format returned ( list (default), dict or pandas)
     """
@@ -202,6 +222,7 @@ def plot(**kwargs):
                 whom keywords are ignored.
                 input should be given as valid cocoa pandas dataframe.
     """
+    
     input_arg=kwargs.get('input',None)
     if input_arg != None:
         if not isinstance(input_arg,pd.DataFrame):
@@ -258,4 +279,48 @@ def map(**kwargs):
     """Create a map according to arguments and options. 
     See help(hist).
     """
-    return None
+    p=get(**kwargs,output='pandas')
+    lastdate=p["date"].max()
+    p=gpd.GeoDataFrame(_info.add_field(input=p[p["date"]==lastdate],\
+        geofield='country',field=['geometry','country_name'])[["cases","geometry","country_name"]])
+
+    p=p[p['geometry']!=None]
+
+    #Read data to json
+    merged_json = json.loads(p.to_json())
+    #Convert to str like object
+    json_data = json.dumps(merged_json)
+    
+    geosource = GeoJSONDataSource(geojson = json_data)
+
+    #Define a sequential multi-hue color palette.
+    palette = brewer['RdYlGn'][10] # see https://docs.bokeh.org/en/latest/docs/reference/palettes.html
+
+    hover = HoverTool(tooltips = [ ('Country','@country_name'),
+                              ('Cases', '@cases') ] )
+
+    #Instantiate LinearColorMapper that linearly maps numbers in a range, into a sequence of colors.
+    color_mapper = LinearColorMapper(palette = palette)#, low = -50, high=50)
+    #Define custom tick labels for color bar.
+    #tick_labels = {'0': '0%', '5': '5%', '10':'10%', '15':'15%', '20':'20%'}#, '25':'25%', '30':'30%','35':'35%', '40': '>40%'}
+
+    #Create color bar. 
+    color_bar = ColorBar(color_mapper=color_mapper, label_standoff=8,width = 500, height = 20,
+    border_line_color=None,location = (0,0), orientation = 'horizontal')#, major_label_overrides = tick_labels)
+
+    #Create figure object.
+    f = figure(title = 'CocoaPlot', \
+        plot_height = 700 , plot_width = 950,tools = [hover])#, toolbar_location = None)
+    f.xgrid.grid_line_color = None
+    f.ygrid.grid_line_color = None
+
+    #Add patch renderer to figure. 
+    f.patches('xs','ys', source = geosource,fill_color = {'field' :'cases', 'transform' : color_mapper},\
+          line_color = 'black', line_width = 0.25, fill_alpha = 1)
+
+    #Specify figure layout.
+    f.add_layout(color_bar, 'below')
+
+    #Display figure.
+    return f
+    
