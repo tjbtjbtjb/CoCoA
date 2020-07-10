@@ -247,7 +247,10 @@ class GeoInfo():
         'fertility':'https://www.worldometers.info/world-population/population-by-country/',\
         'median_age':'https://www.worldometers.info/world-population/population-by-country/',\
         'urban_rate':'https://www.worldometers.info/world-population/population-by-country/',\
-        'geometry':'https://github.com/johan/world.geo.json/'}
+        'geometry':'https://github.com/johan/world.geo.json/',\
+        'region_code_list':'https://en.wikipedia.org/wiki/List_of_countries_by_United_Nations_geoscheme',\
+        'region_name_list':'https://en.wikipedia.org/wiki/List_of_countries_by_United_Nations_geoscheme',\
+        'capital':'https://en.wikipedia.org/wiki/List_of_countries_by_United_Nations_geoscheme'}
     
     _data_geometry = pd.DataFrame()
     _data_population = pd.DataFrame()
@@ -255,7 +258,8 @@ class GeoInfo():
     def __init__(self):
         """ __init__ member function.
         """
-        self._g=GeoManager()
+        self._gm=GeoManager()
+        self._gr=GeoRegion()
 
     def get_list_field(self):
         """ return the list of supported additionnal fields available
@@ -320,10 +324,10 @@ class GeoInfo():
             raise CocoaKeyError('The geofield "'+geofield+'" given is '
                 'not a valid column name of the input pandas dataframe.')
                 
-        self._g.set_standard('iso2')
-        countries_iso2=self._g.to_standard(p[geofield].tolist())
-        self._g.set_standard('iso3')
-        countries_iso3=self._g.to_standard(p[geofield].tolist())
+        self._gm.set_standard('iso2')
+        countries_iso2=self._gm.to_standard(p[geofield].tolist())
+        self._gm.set_standard('iso3')
+        countries_iso3=self._gm.to_standard(p[geofield].tolist())
 
         p['iso2_tmp']=countries_iso2
         p['iso3_tmp']=countries_iso3   
@@ -375,13 +379,17 @@ class GeoInfo():
                     
                     # standardization of country name
                     self._data_population['iso3_tmp2']=\
-                        self._g.to_standard(self._data_population['country'].tolist(),\
+                        self._gm.to_standard(self._data_population['country'].tolist(),\
                         db='worldometers')
                 
                 p=p.merge(self._data_population[["iso3_tmp2",f]],how='left',\
                         left_on='iso3_tmp',right_on='iso3_tmp2',\
                         suffixes=('','_tmp')).drop(['iso3_tmp2'],axis=1)
-                        
+            # ----------------------------------------------------------
+            elif f in ['region_code_list','region_name_list','capital']:
+                p=p.merge(self._gr.get_pandas()[['iso3',f]],how='left',\
+                    left_on='iso3_tmp',right_on='iso3',\
+                    suffixes=('','_tmp')).drop(['iso3'],axis=1)
             # ----------------------------------------------------------
             elif f == 'geometry':
                 if self._data_geometry.empty:
@@ -405,9 +413,6 @@ class GeoInfo():
 # --- GeoInfo class ---------------------------------------------------
 # ---------------------------------------------------------------------
 
-from pycountry_convert.convert_continent_code_to_continent_name import CONTINENT_CODE_TO_CONTINENT_NAME
-from pycountry_convert.convert_country_alpha2_to_continent_code import COUNTRY_ALPHA2_TO_CONTINENT_CODE
-
 class GeoRegion():
     """GeoRegion class definition. Does not inheritate from any other 
     class.
@@ -416,20 +421,61 @@ class GeoRegion():
     of errors (see cocoa.error)
     """
     
-    _region_list=CONTINENT_CODE_TO_CONTINENT_NAME
-    _country_list=COUNTRY_ALPHA2_TO_CONTINENT_CODE
+    _source_dict={"UN_M49":"https://en.wikipedia.org/wiki/UN_M49",\
+        "GeoScheme":"https://en.wikipedia.org/wiki/List_of_countries_by_United_Nations_geoscheme"}
+    
+    _region_dict={}
+    _p_gs = pd.DataFrame()
     
     def __init__(self,):
         """ __init__ member function.
         """
-        self._region_list.update({"UE":"European Union","WW":"Whole world"})
-        if 'XK' in self._country_list: 
-            del self._country_list['XK'] # creates bugs in pycountry and is currently a contested country as country
+        #if 'XK' in self._country_list: 
+        #    del self._country_list['XK'] # creates bugs in pycountry and is currently a contested country as country
+        
+        
+        # --- get the UN M49 information and organize the data in the _region_dict
+        try:
+            p_m49=pd.read_html(self._source_dict["UN_M49"])[1]
+        except:
+            raise CocoaConnectionError('Cannot connect to the UN_M49 '
+                    'wikipedia page. '
+                    'Please check your connection or availability of the page.')
+                    
+        p_m49.columns=['code','region_name']
+        p_m49['region_name']=[r.split('(')[0].rstrip() for r in p_m49.region_name]  # suppress information in parenthesis in region name
+        p_m49.set_index('code')
+        
+        self._region_dict.update(p_m49.to_dict('split')['data'])
+        self._region_dict.update({"UE":"European Union"})  # add UE for other analysis
+        
+        # --- get the UnitedNation GeoScheme and organize the data 
+        try:            
+            p_gs=pd.read_html(self._source_dict["GeoScheme"])[0]
+        except:
+            raise CocoaConnectionError('Cannot connect to the UN GeoScheme '
+                    'wikipedia page. '
+                    'Please check your connection or availability of the page.')
+        p_gs.columns=['country','capital','iso2','iso3','num','m49']  
+                  
+        idx=[]
+        reg=[]
+        cap=[]
+        for index, row in p_gs.iterrows():
+            if row.iso3 != '–' : # meaning a non standard iso in wikipedia UN GeoScheme
+                for r in row.m49.replace(" ","").split('<'):
+                    idx.append(row.iso3)
+                    reg.append(int(r))
+                    cap.append(row.capital)
+        self._p_gs=pd.DataFrame({'iso3':idx,'capital':cap,'region':reg})
+        self._p_gs=self._p_gs.merge(p_m49,how='left',left_on='region',\
+                            right_on='code').drop(["code"],axis=1)
+        
+    def get_source(selft):
+        return self._source_dict
         
     def get_region_list(self):
-        """ it returns the list of supported region name.
-        """
-        return self._region_list
+        return list(self._region_dict.values())
         
     def get_countries_from_region(self,region):
         """ it returns a list of countries for the given region name.
@@ -440,16 +486,16 @@ class GeoRegion():
             raise CocoaKeyError('The given region "'+str(region)+'" is unknown.')
             
         clist=[]
-        if region=='UE':
-            clist=sorted(['AT', 'BE', 'HR', 'BG', 'CY', 'CZ', 'DK', \
-                        'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', \
-                        'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', \
-                        'PT', 'RO', 'SK', 'SI', 'ES', 'SE'])
-        elif region=='WW':
-            clist=sorted(list(COUNTRY_ALPHA2_TO_CONTINENT_CODE.keys()))
-        else:
-            for k,r in COUNTRY_ALPHA2_TO_CONTINENT_CODE.items():
-                if r==region:
-                    clist.append(k)
         
-        return clist
+        if region=='European Union':
+            clist=['AUT','BEL','BGR','CYP','CZE','DEU','DNK','EST',\
+                        'ESP','FIN','FRA','GRC','HRV','HUN','IRL','ITA',\
+                        'LTU','LUX','LVA','MLT','NLD','POL','PRT','ROU',\
+                        'SWE','SVN','SVK']
+        else:
+            clist=self._p_gs[self._p_gs['region_name']==region]['iso3'].to_list()
+        
+        return sorted(clist)
+        
+    def get_pandas(self):
+        return self._p_gs
