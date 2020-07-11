@@ -64,11 +64,11 @@ class CocoDisplay():
         panels = []
         option = kwargs.get('option', None)
         if option == 'nonneg':
-            babypandas = self.p.get_stats(location=clist, type=kwargs['type'], which=kwargs['which'],
+            babypandas = self.p.get_stats( which=kwargs['which'], type=kwargs['type'], location=clist,
                                          output='pandas', option='nonneg')
 
         else:
-            babypandas = self.p.get_stats(location=clist, type=kwargs['type'], which=kwargs['which'],
+            babypandas = self.p.get_stats( which=kwargs['which'], type=kwargs['type'], location=clist,
                                          output='pandas')
 
         self.cocoa_pandas = babypandas
@@ -121,7 +121,7 @@ class CocoDisplay():
                                          output='pandas')
 
         self.cocoa_pandas = babypandas
-                                         
+
         data = pd.pivot_table(babypandas, index='date',columns='location', values=kwargs['which']).reset_index()
         filter_data1 = data[['date', clist[0]]].rename(
             columns={clist[0]: kwargs['which']})
