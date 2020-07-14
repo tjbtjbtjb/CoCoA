@@ -155,10 +155,10 @@ def get(**kwargs):
     
     where  --   a single string of location, or list of (mandatory, 
                 no default value)
-    what   --   what sort of data to deliver ( 'death','confirmed',
+    which  --   what sort of data to deliver ( 'death','confirmed',
                 'recovered' …). See listwhat() function for full
                 list according to the used database.
-    which  --   which data are computed, either in cumulative mode 
+    what   --   which data are computed, either in cumulative mode 
                 ( 'cumul', default value) or 'daily' or other. See 
                 listwhich() for fullist of available 
                 Full list of which keyword with the listwhich() function.
