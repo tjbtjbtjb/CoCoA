@@ -36,7 +36,7 @@ from bokeh.models import Label, LabelSet
 from bokeh.models import ColumnDataSource, Grid, Line, LinearAxis, Plot
 from bokeh.models import DataRange1d
 import bokeh.palettes
-
+import cocoa.geo as coge
 #import plotly.express as px
 #import plotly.graph_objects as go
 #from branca.colormap import LinearColormap
@@ -45,16 +45,14 @@ import json
 from geopy.geocoders import Nominatim
 import altair as alt
 
-# output_notebook(hide_banner=True)
-
 class CocoDisplay():
     def __init__(self, database):
         self.colors =  bokeh.palettes.d3['Category20'][10]
         self.coco_circle = []
         self.coco_line = []
         self.database=database
-        self.p=cc.DataBase(database)
-
+        if self.database.get_db() != 'aphp':
+            self.geo = coge.GeoManager('name')
 
     def DefFigStatic(self, **kwargs):
         if not isinstance(kwargs['location'], list):
@@ -62,15 +60,20 @@ class CocoDisplay():
         else:
             clist = kwargs['location']
         panels = []
+
+        if self.database.get_db() != 'aphp':
+            clist=self.geo.to_standard(clist,output='list')
+        clist_cp = clist.copy()
+
         option = kwargs.get('option', None)
+
         if option == 'nonneg':
-            babypandas = self.p.get_stats( which=kwargs['which'], type=kwargs['type'], location=clist,
+            babypandas = self.database.get_stats( which=kwargs['which'], type=kwargs['type'], location=clist_cp,
                                          output='pandas', option='nonneg')
 
         else:
-            babypandas = self.p.get_stats( which=kwargs['which'], type=kwargs['type'], location=clist,
+            babypandas = self.database.get_stats( which=kwargs['which'], type=kwargs['type'], location=clist_cp,
                                          output='pandas')
-
         self.cocoa_pandas = babypandas
 
         for axis_type in ["linear", "log"]:
@@ -92,7 +95,7 @@ class CocoDisplay():
                 src=ColumnDataSource(filter_data)
                 fig.line(x='date', y=kwargs['which'], source=src,line_color=self.colors[i%10], legend_label=coun, line_width=2,name=coun)
                 i += 1
-            fig.legend.location = "top_left"
+            fig.legend.location = "bottom_left"
             if kwargs['which'] == 'confirmed' and self.database == 'aphp':
                 kwargs['which'] = 'Rea.'
             fig.legend.title = kwargs['which'].upper()
@@ -110,14 +113,17 @@ class CocoDisplay():
         else:
             clist = kwargs['location']
 
+        if self.database != 'aphp':
+            clist=self.geo.to_standard(clist,output='list')
+        clist_cp = clist.copy()
+
         panels = []
-        curvos = []
         option = kwargs.get('option', None)
         if option == 'nonneg':
-            babypandas = self.p.get_stats(location=clist, type=kwargs['type'], which=kwargs['which'],
-                                         output='pandas', option='nonneg')
+            babypandas = self.database.get_stats( which=kwargs['which'], type=kwargs['type'], location=clist_cp,
+                                             output='pandas', option='nonneg')
         else:
-            babypandas = self.p.get_stats(location=clist, type=kwargs['type'], which=kwargs['which'],
+            babypandas = self.database.get_stats( which=kwargs['which'], type=kwargs['type'], location=clist_cp,
                                          output='pandas')
 
         self.cocoa_pandas = babypandas
@@ -133,7 +139,6 @@ class CocoDisplay():
             columns={clist[1]: kwargs['which']})
         name2=clist[1]
         filter_data2['location']=[name2]*len(data[['date',clist[1]]])
-        print('--->',filter_data2[kwargs['which']])
         src2 = ColumnDataSource(filter_data2)
 
         self.hover_tool = HoverTool(tooltips=[
@@ -149,13 +154,13 @@ class CocoDisplay():
             fig.xaxis.formatter = DatetimeTickFormatter(
                 days=["%d %B %Y"], months=["%d %B %Y"], years=["%d %B %Y"])
 
-            fig.circle('date',kwargs['which'], size=7, color='red', source=src1,name=name1)
+            fig.circle('date',kwargs['which'], size=3, color='red', source=src1,name=name1)
             fig.line(x='date', y=kwargs['which'], source=src1,
-                     line_color='red', line_width=3, line_alpha=.8)
+                     line_color='red', line_width=2, line_alpha=.2)
 
-            fig.circle('date',kwargs['which'], size=7, color='blue', source=src2,name=name2)
+            fig.circle('date',kwargs['which'], size=3, color='blue', source=src2,name=name2)
             fig.line(x='date', y=kwargs['which'], source=src2,
-                     line_color='blue', line_width=3, line_alpha=.8)
+                     line_color='blue', line_width=2, line_alpha=.2)
 
             if kwargs['which'] == 'confirmed' and self.database == 'aphp':
                 kwargs['which'] = 'Rea.'
@@ -238,7 +243,7 @@ class CocoDisplay():
 
                     # tot_type_country=self.p.get_stats(country=country,type='Cumul',which='deaths')[-1]
 
-                    fig.legend.location = "top_left"
+                    fig.legend.location = "bottom_left"
                     fig.legend.title_text_font_style = "bold"
                     fig.legend.title_text_font_size = "5px"
 

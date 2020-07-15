@@ -25,11 +25,11 @@ import datetime
 from datetime import timedelta
 import pandas as pd
 import sys
-
+import cocoa.geo as coge
 
 class DataBase():
     ''' Parse the chosen database and a return a pandas '''
-    def __init__(self,db):
+    def __init__(self,db_name):
         self.database_name=['jhu','aphp','owi']
         self.pandas_datase = {}
         self.available_keys_words=[]
@@ -39,28 +39,33 @@ class DataBase():
         self.total_current_cases = {}
         self.masked_points = {}
         self.diff_days = {}
-        self.country_more_info={}
+        self.location_more_info={}
         self.database_columns_not_computed={}
-        self.database_chosen = db
-        if db not in self.database_name:
+        self.db =  db_name
+        if self.db != 'aphp':
+            self.geo = coge.GeoManager('name')
+
+        if self.db not in self.database_name:
             print('Unknown ' + db + '. Available database so far in CoCoa are : ' + str(self.database) ,file=sys.stderr)
         else:
-            if db == 'jhu':
+            if self.db == 'jhu':
                 print('JHU aka Johns Hopkins database selected ...')
                 self.pandas_datase = self.parse_convert_jhu()
-                self.fill_cocoa_field()
-            elif db == 'aphp':
+            elif self.db == 'aphp':
                 print('APHP database selected ...')
                 full_pandas = {}
                 self.pandas_datase=self.parse_convert_aphp()
                 print('... Sante Public will be also parsed ...')
                 pandas_santepublic = self.parse_convert_santepublic()
                 self.pandas_datase.update(pandas_santepublic)
-                self.fill_cocoa_field()
-            elif db == 'owi':
+            elif self.db == 'owi':
                 print('OWI aka \"Our World in Data\" database selected ...')
                 self.pandas_datase  = self.parse_convert_owi()
-                self.fill_cocoa_field()
+            self.fill_cocoa_field()
+            print('Available keys words are : ',self.get_available_keys_words())
+
+    def get_db(self):
+       return self.db
 
     def available_keys_wordsbase_name(self):
         ''' Return available database '''
@@ -86,6 +91,7 @@ class DataBase():
         jhu_files_ext = ['deaths', 'confirmed', 'recovered']
         pandas_jhu = {}
         self.available_keys_words = jhu_files_ext
+        already_passed_in_geo = False
         for ext in jhu_files_ext:
             fileName = "time_series_covid19_" + ext + "_global.csv"
             url = self.database_url + fileName
@@ -93,6 +99,10 @@ class DataBase():
             pandas_jhu_db = pandas_jhu_db.drop(columns=['Province/State','Lat','Long'])
             pandas_jhu_db = pandas_jhu_db.rename(columns={'Country/Region':'location'})
             pandas_jhu_db = pandas_jhu_db.sort_values(by=['location'])
+            if already_passed_in_geo == False:
+                loc=self.geo.to_standard(list(pandas_jhu_db['location'].values),output='list',db=self.get_db())
+                pandas_jhu_db['location'] = loc
+                already_passed_in_geo = True
             pandas_jhu_db = pandas_jhu_db.set_index('location')
             self.dates    = sorted(pandas.to_datetime(pandas_jhu_db.columns,errors='coerce'))
             pandas_jhu[ext] = pandas_jhu_db
@@ -110,26 +120,21 @@ class DataBase():
         '''
         self.database_url="https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7"
         pandas_aphp_db = pandas.read_csv(self.database_url,sep = ';')
-        pandas_aphp_db = pandas_aphp_db.loc[pandas_aphp_db['sexe'] == 0].rename(columns={'dep':'Country/Region'})\
+        pandas_aphp_db = pandas_aphp_db.loc[pandas_aphp_db['sexe'] == 0].rename(columns={'dep':'location'})\
         .rename(columns={'jour':'date'}).rename(columns={'rea':'resuscitation'}).rename(columns={'rad':'recovered'}).\
             rename(columns={'dc':'deaths'})
         pandas_aphp_db['date'] = pandas.to_datetime(pandas_aphp_db['date'],errors='coerce')
         self.aphp_date_min , self.aphp_date_max = 0, 0
         self.aphp_date_min,self.aphp_date_max = min(pandas_aphp_db['date']),max(pandas_aphp_db['date'])
-        database_columns_not_computed=['date','Country/Region']
+        database_columns_not_computed=['date','location','sexe']
         self.available_keys_words = [i for i in pandas_aphp_db.columns.values.tolist() if i not in database_columns_not_computed]
         pandas_aphp={}
         for w in self.available_keys_words:
-            keep_columns = database_columns_not_computed.copy()
-            keep_columns.append(w)
-            pandas_temp   = pandas_aphp_db[keep_columns]
-            pandas_temp   = pandas_temp.pivot_table(index=database_columns_not_computed[1:],values=w,
-                            columns=database_columns_not_computed[0],aggfunc='first')
+            pandas_temp   = pandas_aphp_db[['location','date',w]]
+            pandas_temp   = pandas_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
             pandas_temp   = pandas_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
-            pandas_temp   = pandas_temp.fillna('')
-            pandas_temp   = pandas_temp.reset_index()
             pandas_aphp[w] = pandas_temp
-            self.dates[w]  = list(pandas_aphp[w].head(0))[3:]
+            self.dates  = pandas_aphp[w].head(0)
         return pandas_aphp
 
     def parse_convert_santepublic(self):
@@ -142,10 +147,10 @@ class DataBase():
         '''
         self.database_url="https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675"
         pandas_santepublic_db = pandas.read_csv(self.database_url,sep = ';')
-        pandas_santepublic_db = pandas_santepublic_db.rename(columns={'dep':'Country/Region'}).rename(columns={'jour':'date'}).\
+        pandas_santepublic_db = pandas_santepublic_db.rename(columns={'dep':'location'}).rename(columns={'jour':'date'}).\
         rename(columns={'P':'total_cases'}).rename(columns={'T':'total_tests'})
         pandas_santepublic_db['date'] = pandas.to_datetime(pandas_santepublic_db['date'],errors='coerce')
-        database_columns_not_computed = ['date','Country/Region']
+        database_columns_not_computed = ['date','location','sexe']
         available_keys_words_pub = [i for i in pandas_santepublic_db.columns.values.tolist() if i not in database_columns_not_computed]
         if min(pandas_santepublic_db['date']) < self.aphp_date_min or max(pandas_santepublic_db['date']) > self.aphp_date_max:
             print("Check the APHP and SantePublique dates ! You shouln't be here ...")
@@ -154,16 +159,12 @@ class DataBase():
         delta_max = self.aphp_date_max - max(pandas_santepublic_db['date'])
         cp_pandas_santepublic = pandas_santepublic_db.copy()
         cp_pandas_santepublic['date'] = cp_pandas_santepublic['date'].dt.strftime("%m/%d/%y")
-        cp_pandas_santepublic = (cp_pandas_santepublic.groupby(['Country/Region','date']).sum())
+        cp_pandas_santepublic = (cp_pandas_santepublic.groupby(['location','date']).sum())
         cp_pandas_santepublic.reset_index(inplace=True)
         pandas_santepublic={}
         for w in available_keys_words_pub:
-            keep_columns = database_columns_not_computed.copy()
-            keep_columns.append(w)
-            pandas_temp   = pandas_santepublic_db[keep_columns]
-            pandas_temp   = pandas_temp.pivot_table(index=database_columns_not_computed[1:],values=w,
-                 columns=database_columns_not_computed[0],aggfunc='first')
-            pandas_temp   = pandas_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
+            pandas_temp   = cp_pandas_santepublic[['location','date',w]]
+            pandas_temp   = pandas_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
             a=['0']*pandas_temp.shape[0]
             for i in range(delta_min.days):
                 days=self.aphp_date_min + timedelta(days=i)
@@ -172,10 +173,8 @@ class DataBase():
             for i in range(0,delta_max.days):
                 days=max(pandas_santepublic_db['date']) + timedelta(days=i+1)
                 pandas_temp.insert(loc=last_column+i,column=days.strftime("%m/%d/%y"),value=a)
-            pandas_temp   = pandas_temp.fillna('')
-            pandas_temp   = pandas_temp.reset_index()
             pandas_santepublic[w] = pandas_temp
-            self.dates[w]  = list(pandas_santepublic[w].head(0))[3:]
+            self.dates  = pandas_santepublic[w].head(0)
         self.available_keys_words += available_keys_words_pub
         return pandas_santepublic
 
@@ -188,7 +187,6 @@ class DataBase():
         self.database_url="https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv"
         pandas_owi_db   = pandas.read_csv(self.database_url,sep = ',')
         pandas_owi_db   = pandas_owi_db.sort_values(by=['location','date'])
-        #pandas_owi_db   = pandas_owi_db.rename(columns={'location':'Country/Region'})
         pandas_owi_db['date'] = pd.to_datetime(pandas_owi_db['date'],errors='coerce')
         # Drop tests_units : Units used by the location to report its testing data
         pandas_owi_db  = pandas_owi_db.drop(columns=['tests_units'])
@@ -197,6 +195,11 @@ class DataBase():
         'total_tests_per_thousand', 'new_tests_per_thousand', 'new_tests_smoothed', 'new_tests_smoothed_per_thousand','stringency_index']
         self.database_columns_for_index = [i for i in pandas_owi_db.columns.values.tolist() if i not in self.available_keys_words]
         pandas_owi =  {}
+        pandas_owi_db = pandas_owi_db[pandas_owi_db['location'] != 'International' ]
+        pandas_owi_db = pandas_owi_db[pandas_owi_db['location'] != 'World' ]
+        loc=self.geo.to_standard(list(pandas_owi_db['location'].values),output='list',db=self.get_db())
+        pandas_owi_db['location'] = loc
+
         for w in self.get_available_keys_words():
             pandas_owi_temp = pandas_owi_db[['location','date',w]]
             pandas_owi_temp = pandas_owi_temp.set_index('location')
@@ -211,17 +214,25 @@ class DataBase():
         df = self.get_rawdata()
         for w in self.get_available_keys_words():
             self.dicos_countries[w] = defaultdict(list)
-            for index, row in df[w].iterrows():
-                location=index
+            dict_copy = df[w].to_dict('split')
+            d_loca = dict_copy['index']
+            d_date = dict_copy['columns']
+            d_data = dict_copy['data']
+            #for index, row in df[w].iterrows():
+            for i in range(len(d_loca)):
+                location=d_loca[i]
+                #print(location)
                 temp=[]
-                val=[]
-                for i in self.get_dates():
-                    try:
-                        v =(float(row[i]))
-                    except KeyError:
-                        v = np.nan
-                    val.append(v)
-                self.dicos_countries[w][location].append(val)
+                val=d_data[i]
+                #print(location,'   ', (val))
+                #[val.append(row[i]) except KeyError: np.nan for i in self.get_dates()]
+                #for i in self.get_dates():
+                #    try:
+                #        v =(float(row[i]))
+                #    except KeyError:
+                #        v = np.nan
+                #    val.append(v)
+                self.dicos_countries[w][d_loca[i]].append(d_data[i])
             self.dict_sum_data[w] = defaultdict(list)
             self.total_current_cases[w] = defaultdict(list)
             self.masked_points[w] = defaultdict(list)
@@ -234,11 +245,11 @@ class DataBase():
                 self.diff_days[w][location].insert(0, 0)
                 self.diff_days[w][location] = np.array(self.diff_days[w][location])
 
-    def set_non_numerics_info(self,country,val):
-        self.country_more_info[country]=val
+    def set_more_db_info(self,country,val):
+        self.location_more_info[country]=val
 
-    def get_non_numerics_info(self,country):
-        return self.country_more_info[country]
+    def get_more_db_info(self,country):
+        return self.location_more_info[country]
 
     def flat_list(self, matrix):
         flatten_matrix = []
@@ -247,7 +258,7 @@ class DataBase():
                 flatten_matrix.append(val)
         return flatten_matrix
 
-    def get_sum_days(self):
+    def get_cumul_days(self):
         return self.dict_sum_data
 
     def get_diff_days(self):
@@ -265,10 +276,14 @@ class DataBase():
         else:
             clist = kwargs['location']
 
+        # one should convert the full list at once just below…
+        if self.get_db() != 'aphp':
+            clist=self.geo.to_standard(clist,output='list')
+
         diffout = np.array(
             tuple(dict((c, self.get_diff_days()[kwargs['which']][c]) for c in clist).values()))
         sumout = np.array(tuple(dict(
-            (c, (self.get_sum_days()[kwargs['which']][c])) for c in clist).values()))
+            (c, (self.get_cumul_days()[kwargs['which']][c])) for c in clist).values()))
 
         option = kwargs.get('option', None)
         if option == 'nonneg':
@@ -288,9 +303,7 @@ class DataBase():
                     yy[0:k] = yy[0:k]*(1-float(val_to_repart)/s)
                 diffout[c, :] = yy
                 sumout[c, :] = np.cumsum(yy)
-
         output = kwargs.get('output',None)
-
         if kwargs['type'] == 'Cumul':
             out = sumout
         elif kwargs['type'] == 'Diff':
@@ -301,14 +314,6 @@ class DataBase():
         i = 0
         data = {}
         for coun in clist:
-            #if self.database_columns_not_computed:
-            #    data[i] = {
-            #    'location' :[coun]*len(out[i]),
-            #    str(self.database_columns_not_computed[2:]): [self.get_non_numerics_info(coun)]*len(out[i]),
-            #    'date': [dt.strptime(datos, '%m/%d/%y') for datos in self.get_dates()],
-            #    kwargs['which']: out[i]
-            #    }
-            #else:
             data[i] = {
                 'location':[coun]*len(out[i]),
                 'date': [dt.strptime(datos, '%m/%d/%y') for datos in self.get_dates()],
