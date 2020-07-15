@@ -91,7 +91,6 @@ class DataBase():
         jhu_files_ext = ['deaths', 'confirmed', 'recovered']
         pandas_jhu = {}
         self.available_keys_words = jhu_files_ext
-        already_passed_in_geo = False
         for ext in jhu_files_ext:
             fileName = "time_series_covid19_" + ext + "_global.csv"
             url = self.database_url + fileName
@@ -99,10 +98,6 @@ class DataBase():
             pandas_jhu_db = pandas_jhu_db.drop(columns=['Province/State','Lat','Long'])
             pandas_jhu_db = pandas_jhu_db.rename(columns={'Country/Region':'location'})
             pandas_jhu_db = pandas_jhu_db.sort_values(by=['location'])
-            if already_passed_in_geo == False:
-                loc=self.geo.to_standard(list(pandas_jhu_db['location'].values),output='list',db=self.get_db())
-                pandas_jhu_db['location'] = loc
-                already_passed_in_geo = True
             pandas_jhu_db = pandas_jhu_db.set_index('location')
             self.dates    = sorted(pandas.to_datetime(pandas_jhu_db.columns,errors='coerce'))
             pandas_jhu[ext] = pandas_jhu_db
@@ -197,8 +192,6 @@ class DataBase():
         pandas_owi =  {}
         pandas_owi_db = pandas_owi_db[pandas_owi_db['location'] != 'International' ]
         pandas_owi_db = pandas_owi_db[pandas_owi_db['location'] != 'World' ]
-        loc=self.geo.to_standard(list(pandas_owi_db['location'].values),output='list',db=self.get_db())
-        pandas_owi_db['location'] = loc
 
         for w in self.get_available_keys_words():
             pandas_owi_temp = pandas_owi_db[['location','date',w]]
@@ -219,7 +212,10 @@ class DataBase():
             d_loca = dict_copy['index']
             d_date = dict_copy['columns']
             d_data = dict_copy['data']
+            d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db())
+            print(d_loca)
             for i in range(len(d_loca)):
+
                 location=d_loca[i]
                 temp=[]
                 val=d_data[i]
