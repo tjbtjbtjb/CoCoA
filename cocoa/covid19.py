@@ -219,7 +219,6 @@ class DataBase():
             d_loca = dict_copy['index']
             d_date = dict_copy['columns']
             d_data = dict_copy['data']
-
             for i in range(len(d_loca)):
                 location=d_loca[i]
                 temp=[]
@@ -267,10 +266,6 @@ class DataBase():
             clist = [kwargs['location']]
         else:
             clist = kwargs['location']
-
-        # one should convert the full list at once just below…
-        if self.get_db() != 'aphp':
-            clist=self.geo.to_standard(clist,output='list')
 
         diffout = np.array(
             tuple(dict((c, self.get_diff_days()[kwargs['which']][c]) for c in clist).values()))
