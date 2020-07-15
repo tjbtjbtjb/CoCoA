@@ -212,8 +212,8 @@ class DataBase():
             d_loca = dict_copy['index']
             d_date = dict_copy['columns']
             d_data = dict_copy['data']
-            d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db())
-            print(d_loca)
+            if self.db != 'aphp': 
+                d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db())
             for i in range(len(d_loca)):
 
                 location=d_loca[i]
