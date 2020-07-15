@@ -165,7 +165,7 @@ class DataBase():
         for w in available_keys_words_pub:
             pandas_temp   = cp_pandas_santepublic[['location','date',w]]
             pandas_temp   = pandas_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
-            a=['0']*pandas_temp.shape[0]
+            a=[0]*pandas_temp.shape[0]
             for i in range(delta_min.days):
                 days=self.aphp_date_min + timedelta(days=i)
                 pandas_temp.insert(loc=0+i,column=days.strftime("%m/%d/%y"),value=a)
@@ -214,24 +214,16 @@ class DataBase():
         df = self.get_rawdata()
         for w in self.get_available_keys_words():
             self.dicos_countries[w] = defaultdict(list)
+            #for index, row in df[w].iterrows():iterows to slow
             dict_copy = df[w].to_dict('split')
             d_loca = dict_copy['index']
             d_date = dict_copy['columns']
             d_data = dict_copy['data']
-            #for index, row in df[w].iterrows():
+
             for i in range(len(d_loca)):
                 location=d_loca[i]
-                #print(location)
                 temp=[]
                 val=d_data[i]
-                #print(location,'   ', (val))
-                #[val.append(row[i]) except KeyError: np.nan for i in self.get_dates()]
-                #for i in self.get_dates():
-                #    try:
-                #        v =(float(row[i]))
-                #    except KeyError:
-                #        v = np.nan
-                #    val.append(v)
                 self.dicos_countries[w][d_loca[i]].append(d_data[i])
             self.dict_sum_data[w] = defaultdict(list)
             self.total_current_cases[w] = defaultdict(list)
