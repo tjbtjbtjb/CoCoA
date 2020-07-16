@@ -213,7 +213,7 @@ class DataBase():
             d_date = dict_copy['columns']
             d_data = dict_copy['data']
             if self.db != 'aphp':
-                d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db()) #list(d_loca),output='list',db=self.get_db(),interpret_region=True)
+                d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db(),interpret_region=True)
             for i in range(len(d_loca)):
 
                 location=d_loca[i]
@@ -263,7 +263,7 @@ class DataBase():
         else:
             clist = kwargs['location']
 
-        clist=self.geo.to_standard(clist,output='list')
+        clist=self.geo.to_standard(clist,output='list',interpret_region=True)
 
         diffout = np.array(
             tuple(dict((c, self.get_diff_days()[kwargs['which']][c]) for c in clist).values()))
