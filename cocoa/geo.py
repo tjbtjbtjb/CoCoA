@@ -103,13 +103,14 @@ class GeoManager():
 
         Arguments
         -----------------
-        first arg  --   w, list of string of locations (or single string)
-                        to convert to standard one
+        first arg        --  w, list of string of locations (or single string)
+                             to convert to standard one
 
-        output     --   'list' (default), 'dict' or 'pandas'
-        db         --   database name to help conversion.
-                        Default : None, meaning best effort to convert.
-                        Known database : jhu, wordometer
+        output           -- 'list' (default), 'dict' or 'pandas'
+        db               -- database name to help conversion.
+                            Default : None, meaning best effort to convert.
+                            Known database : jhu, wordometer
+        interpret_region -- Boolean, default=False
         """
 
         output=kwargs.get('output',self.get_list_output()[0])
@@ -121,7 +122,11 @@ class GeoManager():
         if db not in self.get_list_db():
             raise CocoaDbError('Unknown database "'+db+'" for translation to '
                 'standardized location names. See get_list_db() or help.')
-
+        
+        interpret_region=kwargs.get('interpret_region',False)
+        if not isinstance(interpret_region,bool):
+            raise CocoaTypeError('The interpret_region argument is a boolean, '
+                'not a '+str(type(interpret_region)))
         w0=w
         if isinstance(w,str):
             w=[w]
@@ -143,11 +148,11 @@ class GeoManager():
                 raise CocoaTypeError('Locations should be given as '
                     'strings or integers only')
 
-            if c in self._gr.get_region_list():
+            if (c in self._gr.get_region_list()) and interpret_region == True:
                 w=self._gr.get_countries_from_region(c)+w
             else:
                 if len(c)==0:
-                    n1=None
+                    n1='' #None
                 else:
                     try:
                         n0=pc.countries.lookup(c)

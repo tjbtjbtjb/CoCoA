@@ -213,7 +213,7 @@ class DataBase():
             d_date = dict_copy['columns']
             d_data = dict_copy['data']
             if self.db != 'aphp': 
-                d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db())
+                d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db(),interpret_region=True)
             for i in range(len(d_loca)):
 
                 location=d_loca[i]
