@@ -30,7 +30,7 @@ import cocoa.geo as coge
 class DataBase():
     ''' Parse the chosen database and a return a pandas '''
     def __init__(self,db_name):
-        self.database_name=['jhu','aphp','owi']
+        self.database_name=['jhu','aphp','owid']
         self.pandas_datase = {}
         self.available_keys_words=[]
         self.dates = {}
@@ -46,7 +46,7 @@ class DataBase():
             self.geo = coge.GeoManager('name')
 
         if self.db not in self.database_name:
-            print('Unknown ' + db + '. Available database so far in CoCoa are : ' + str(self.database) ,file=sys.stderr)
+            print('Unknown ' + self.db + '. Available database so far in CoCoa are : ' + str(self.database_name) ,file=sys.stderr)
         else:
             if self.db == 'jhu':
                 print('JHU aka Johns Hopkins database selected ...')
@@ -58,9 +58,9 @@ class DataBase():
                 print('... Sante Public will be also parsed ...')
                 pandas_santepublic = self.parse_convert_santepublic()
                 self.pandas_datase.update(pandas_santepublic)
-            elif self.db == 'owi':
-                print('OWI aka \"Our World in Data\" database selected ...')
-                self.pandas_datase  = self.parse_convert_owi()
+            elif self.db == 'owid':
+                print('OWID aka \"Our World in Data\" database selected ...')
+                self.pandas_datase  = self.parse_convert_owid()
             self.fill_cocoa_field()
             print('Available keys words are : ',self.get_available_keys_words())
 
@@ -173,34 +173,34 @@ class DataBase():
         self.available_keys_words += available_keys_words_pub
         return pandas_santepublic
 
-    def parse_convert_owi(self):
+    def parse_convert_owid(self):
         ''' Our World in Data
         homepage: https://ourworldindata.org/coronavirus
-        Parse and convert OWI aka \"Our World in Data\"  to JHU one for historical raison
+        Parse and convert OWID aka \"Our World in Data\"  to JHU one for historical raison
         https://github.com/owid/covid-19-data/blob/master/public/data/owid-covid-data-codebook.md '''
         self.pandas_datase = {}
         self.database_url="https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv"
-        pandas_owi_db   = pandas.read_csv(self.database_url,sep = ',')
-        pandas_owi_db   = pandas_owi_db.sort_values(by=['location','date'])
-        pandas_owi_db['date'] = pd.to_datetime(pandas_owi_db['date'],errors='coerce')
+        pandas_owid_db   = pandas.read_csv(self.database_url,sep = ',')
+        pandas_owid_db   = pandas_owid_db.sort_values(by=['location','date'])
+        pandas_owid_db['date'] = pd.to_datetime(pandas_owid_db['date'],errors='coerce')
         # Drop tests_units : Units used by the location to report its testing data
-        pandas_owi_db  = pandas_owi_db.drop(columns=['tests_units'])
+        pandas_owid_db  = pandas_owid_db.drop(columns=['tests_units'])
         self.available_keys_words = ['total_cases', 'new_cases', 'total_deaths','new_deaths', 'total_cases_per_million',
         'new_cases_per_million', 'total_deaths_per_million','new_deaths_per_million',  'new_tests',
         'total_tests_per_thousand', 'new_tests_per_thousand', 'new_tests_smoothed', 'new_tests_smoothed_per_thousand','stringency_index']
-        self.database_columns_for_index = [i for i in pandas_owi_db.columns.values.tolist() if i not in self.available_keys_words]
-        pandas_owi =  {}
-        pandas_owi_db = pandas_owi_db[pandas_owi_db['location'] != 'International' ]
-        pandas_owi_db = pandas_owi_db[pandas_owi_db['location'] != 'World' ]
+        self.database_columns_for_index = [i for i in pandas_owid_db.columns.values.tolist() if i not in self.available_keys_words]
+        pandas_owid =  {}
+        pandas_owid_db = pandas_owid_db[pandas_owid_db['location'] != 'International' ]
+        pandas_owid_db = pandas_owid_db[pandas_owid_db['location'] != 'World' ]
 
         for w in self.get_available_keys_words():
-            pandas_owi_temp = pandas_owi_db[['location','date',w]]
-            pandas_owi_temp = pandas_owi_temp.set_index('location')
-            pandas_owi_temp = pandas_owi_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
-            pandas_owi_temp = pandas_owi_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
-            pandas_owi[w] = pandas_owi_temp
-            self.dates  = pandas_owi[w].head(0)
-        return pandas_owi
+            pandas_owid_temp = pandas_owid_db[['location','date',w]]
+            pandas_owid_temp = pandas_owid_temp.set_index('location')
+            pandas_owid_temp = pandas_owid_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
+            pandas_owid_temp = pandas_owid_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
+            pandas_owid[w] = pandas_owid_temp
+            self.dates  = pandas_owid[w].head(0)
+        return pandas_owid
 
     def fill_cocoa_field(self):
         ''' Fill CoCoA variables with database data '''
@@ -212,8 +212,8 @@ class DataBase():
             d_loca = dict_copy['index']
             d_date = dict_copy['columns']
             d_data = dict_copy['data']
-            if self.db != 'aphp': 
-                d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db(),interpret_region=True)
+            if self.db != 'aphp':
+                d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db()) #list(d_loca),output='list',db=self.get_db(),interpret_region=True)
             for i in range(len(d_loca)):
 
                 location=d_loca[i]
@@ -262,6 +262,8 @@ class DataBase():
             clist = [kwargs['location']]
         else:
             clist = kwargs['location']
+
+        clist=self.geo.to_standard(clist,output='list')
 
         diffout = np.array(
             tuple(dict((c, self.get_diff_days()[kwargs['which']][c]) for c in clist).values()))

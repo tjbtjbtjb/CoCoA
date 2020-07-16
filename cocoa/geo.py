@@ -46,7 +46,7 @@ class GeoManager():
             'name',           # Standard name ( != Official, caution )
             'num']            # Numeric standard
 
-    _list_db=[None,'jhu','worldometers','owi'] # first is default
+    _list_db=[None,'jhu','worldometers','owid'] # first is default
     _list_output=['list','dict','pandas'] # first is default
 
     _standard = None # currently used normalisation standard
@@ -236,7 +236,7 @@ class GeoManager():
                 "Saint Pierre & Miquelon":"SPM",\
                 "Sint Maarten":"SXM",\
                 } )
-        elif db=='owi':
+        elif db=='owid':
             translation_dict.update({\
                     "Bonaire Sint Eustatius and Saba":"BES",\
                     "Cape Verde":"CPV",\
