@@ -62,7 +62,7 @@ class CocoDisplay():
         panels = []
 
         if self.database.get_db() != 'aphp':
-            clist=self.geo.to_standard(clist,output='list')
+            clist=self.geo.to_standard(clist,output='list',interpret_region=True)
         clist_cp = clist.copy()
 
         option = kwargs.get('option', None)
@@ -114,7 +114,7 @@ class CocoDisplay():
             clist = kwargs['location']
 
         if self.database != 'aphp':
-            clist=self.geo.to_standard(clist,output='list')
+            clist=self.geo.to_standard(clist,output='list',interpret_region=True)
         clist_cp = clist.copy()
 
         panels = []
