@@ -110,7 +110,8 @@ class GeoManager():
         db               -- database name to help conversion.
                             Default : None, meaning best effort to convert.
                             Known database : jhu, wordometer
-        interpret_region -- Boolean, default=False
+        interpret_region -- Boolean, default=False. If yes, the output should 
+                            be only 'list'.  
         """
 
         output=kwargs.get('output',self.get_list_output()[0])
@@ -127,12 +128,17 @@ class GeoManager():
         if not isinstance(interpret_region,bool):
             raise CocoaTypeError('The interpret_region argument is a boolean, '
                 'not a '+str(type(interpret_region)))
-        w0=w
+                
+        if interpret_region==True and output!='list':
+            raise CocoaKeyError('The interpret_region True argument is incompatible '
+                'with non list output option.')
+        
         if isinstance(w,str):
             w=[w]
         elif not isinstance(w,list):
             raise CocoaTypeError('Waiting for str, list of str or pandas'
                 'as input of get_standard function member of GeoManager')
+        w0=w.copy()
 
         if db:
             w=self.first_db_translation(w,db)
@@ -190,7 +196,7 @@ class GeoManager():
         elif output=='dict':
             return dict(zip(w0, n))
         elif output=='pandas':
-            return pd.DataFrame({'inputname':w,self._standard:n})
+            return pd.DataFrame({'inputname':w0,self._standard:n})
         else:
             return None # should not be here
 
@@ -281,7 +287,7 @@ class GeoInfo():
         """ __init__ member function.
         """
         self._gm=GeoManager()
-        self._gr=GeoRegion()
+        self._grp=GeoRegion().get_pandas()
 
     def get_list_field(self):
         """ return the list of supported additionnal fields available
@@ -318,11 +324,12 @@ class GeoInfo():
         """
 
         # --- kwargs analysis ---
-        p=kwargs.get('input',None).copy() # the panda
+        p=kwargs.get('input',None) # the panda
         if not isinstance(p,pd.DataFrame):
             raise CocoaTypeError('You should provide a valid input pandas'
                 ' DataFrame as input. See help.')
-
+        p=p.copy()
+        
         overload=kwargs.get('overload',False)
         if not isinstance(overload,bool):
             raise CocoaTypeError('The overload option should be a boolean.')
@@ -366,7 +373,7 @@ class GeoInfo():
             # ----------------------------------------------------------
             elif f == 'continent_name':
                 p[f] = [pcc.convert_continent_code_to_continent_name( \
-                    pcc.country_alpha2_to_continent_code(k)) for k in countries_iso2]
+                    pcc.country_alpha2_to_continent_code(k) ) for k in countries_iso2 ]
             # ----------------------------------------------------------
             elif f == 'country_name':
                 p[f] = [pcc.country_alpha2_to_country_name(k) for k in countries_iso2]
@@ -410,10 +417,23 @@ class GeoInfo():
                         left_on='iso3_tmp',right_on='iso3_tmp2',\
                         suffixes=('','_tmp')).drop(['iso3_tmp2'],axis=1)
             # ----------------------------------------------------------
-            elif f in ['region_code_list','region_name_list','capital']:
-                p=p.merge(self._gr.get_pandas()[['iso3',f]],how='left',\
+            elif f in ['region_code_list','region_name_list']:
+                
+                if f == 'region_code_list':
+                    ff = 'region'
+                elif f == 'region_name_list':
+                    ff = 'region_name'
+                    
+                p[f]=p.merge(self._grp[['iso3',ff]],how='left',\
                     left_on='iso3_tmp',right_on='iso3',\
-                    suffixes=('','_tmp')).drop(['iso3'],axis=1)
+                    suffixes=('','_tmp')) \
+                    .groupby('iso3_tmp')[ff].apply(list).to_list()
+            # ----------------------------------------------------------    
+            elif f in ['capital']:
+                p[f]=p.merge(self._grp[['iso3',f]].drop_duplicates(), \
+                    how='left',left_on='iso3_tmp',right_on='iso3',\
+                    suffixes=('','_tmp'))[f]
+                
             # ----------------------------------------------------------
             elif f == 'geometry':
                 if self._data_geometry.empty:
@@ -431,7 +451,7 @@ class GeoInfo():
                     left_on='iso3_tmp',right_on='id_tmp',\
                     suffixes=('','_tmp')).drop(['id_tmp'],axis=1)
 
-        return p.drop(['iso2_tmp','iso3_tmp'],axis=1)
+        return p.drop(['iso2_tmp','iso3_tmp'],axis=1,errors='ignore')
 
 # ---------------------------------------------------------------------
 # --- GeoInfo class ---------------------------------------------------
