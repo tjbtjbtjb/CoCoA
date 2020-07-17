@@ -110,7 +110,8 @@ class GeoManager():
         db               -- database name to help conversion.
                             Default : None, meaning best effort to convert.
                             Known database : jhu, wordometer
-        interpret_region -- Boolean, default=False
+        interpret_region -- Boolean, default=False. If yes, the output should 
+                            be only 'list'.  
         """
 
         output=kwargs.get('output',self.get_list_output()[0])
@@ -127,12 +128,17 @@ class GeoManager():
         if not isinstance(interpret_region,bool):
             raise CocoaTypeError('The interpret_region argument is a boolean, '
                 'not a '+str(type(interpret_region)))
-        w0=w
+                
+        if interpret_region==True and output!='list':
+            raise CocoaKeyError('The interpret_region True argument is incompatible '
+                'with non list output option.')
+        
         if isinstance(w,str):
             w=[w]
         elif not isinstance(w,list):
             raise CocoaTypeError('Waiting for str, list of str or pandas'
                 'as input of get_standard function member of GeoManager')
+        w0=w.copy()
 
         if db:
             w=self.first_db_translation(w,db)
@@ -190,7 +196,7 @@ class GeoManager():
         elif output=='dict':
             return dict(zip(w0, n))
         elif output=='pandas':
-            return pd.DataFrame({'inputname':w,self._standard:n})
+            return pd.DataFrame({'inputname':w0,self._standard:n})
         else:
             return None # should not be here
 
