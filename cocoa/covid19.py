@@ -263,7 +263,8 @@ class DataBase():
         else:
             clist = kwargs['location']
 
-        clist=self.geo.to_standard(clist,output='list',interpret_region=True)
+        if self.db != 'aphp':
+            clist=self.geo.to_standard(clist,output='list',interpret_region=True)
 
         diffout = np.array(
             tuple(dict((c, self.get_diff_days()[kwargs['which']][c]) for c in clist).values()))
