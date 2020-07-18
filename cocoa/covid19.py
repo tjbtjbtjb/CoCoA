@@ -161,7 +161,7 @@ class DataBase():
         for w in available_keys_words_pub:
             pandas_temp   = cp_pandas_santepublic[['location','date',w]]
             pandas_temp   = pandas_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
-            a=[0]*pandas_temp.shape[0]
+            a= np.nan*pandas_temp.shape[0]
             for i in range(delta_min.days):
                 days=self.aphp_date_min + timedelta(days=i)
                 pandas_temp.insert(loc=0+i,column=days.strftime("%m/%d/%y"),value=a)
