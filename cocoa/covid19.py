@@ -33,7 +33,7 @@ class DataBase():
         self.database_name=['jhu','aphp','owid']
         self.pandas_datase = {}
         self.available_keys_words=[]
-        self.dates = {}
+        self.dates = []
         self.dicos_countries = {}
         self.dict_sum_data = {}
         self.total_current_cases = {}
@@ -129,7 +129,8 @@ class DataBase():
             pandas_temp   = pandas_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
             pandas_temp   = pandas_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
             pandas_aphp[w] = pandas_temp
-            self.dates  = pandas_aphp[w].head(0)
+            self.dates    = sorted(pandas.to_datetime(pandas_aphp[w].columns,errors='coerce'))
+        self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
         return pandas_aphp
 
     def parse_convert_santepublic(self):
@@ -169,7 +170,8 @@ class DataBase():
                 days=max(pandas_santepublic_db['date']) + timedelta(days=i+1)
                 pandas_temp.insert(loc=last_column+i,column=days.strftime("%m/%d/%y"),value=a)
             pandas_santepublic[w] = pandas_temp
-            self.dates  = pandas_santepublic[w].head(0)
+            self.dates    = sorted(pandas.to_datetime(pandas_santepublic[w].columns,errors='coerce'))
+            self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
         self.available_keys_words += available_keys_words_pub
         return pandas_santepublic
 
@@ -199,7 +201,8 @@ class DataBase():
             pandas_owid_temp = pandas_owid_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
             pandas_owid_temp = pandas_owid_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
             pandas_owid[w] = pandas_owid_temp
-            self.dates  = pandas_owid[w].head(0)
+            self.dates    = sorted(pandas.to_datetime(pandas_owid[w] .columns,errors='coerce'))
+        self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
         return pandas_owid
 
     def fill_cocoa_field(self):
