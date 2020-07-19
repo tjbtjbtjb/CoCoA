@@ -37,7 +37,6 @@ class DataBase():
         self.dicos_countries = {}
         self.dict_sum_data = {}
         self.total_current_cases = {}
-        self.masked_points = {}
         self.diff_days = {}
         self.location_more_info={}
         self.database_columns_not_computed={}
@@ -115,6 +114,7 @@ class DataBase():
         '''
         self.database_url="https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7"
         pandas_aphp_db = pandas.read_csv(self.database_url,sep = ';')
+
         pandas_aphp_db = pandas_aphp_db.loc[pandas_aphp_db['sexe'] == 0].rename(columns={'dep':'location'})\
         .rename(columns={'jour':'date'}).rename(columns={'rea':'resuscitation'}).rename(columns={'rad':'recovered'}).\
             rename(columns={'dc':'deaths'})
@@ -126,12 +126,16 @@ class DataBase():
         pandas_aphp={}
         for w in self.available_keys_words:
             pandas_temp   = pandas_aphp_db[['location','date',w]]
+            pandas_temp=pandas_temp.groupby(['location','date']).sum()
+            pandas_temp.reset_index(inplace=True)
             pandas_temp   = pandas_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
             pandas_temp   = pandas_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
             pandas_aphp[w] = pandas_temp
             self.dates    = pandas.to_datetime(pandas_aphp[w].columns,errors='coerce')
         self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
+
         return pandas_aphp
+
 
     def parse_convert_santepublic(self):
         ''' French data.gouv : Sante Public
@@ -160,6 +164,7 @@ class DataBase():
         pandas_santepublic={}
         for w in available_keys_words_pub:
             pandas_temp   = cp_pandas_santepublic[['location','date',w]]
+            pandas_temp.reset_index(inplace=True)
             pandas_temp   = pandas_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
             a= np.nan*pandas_temp.shape[0]
             for i in range(delta_min.days):
@@ -225,7 +230,6 @@ class DataBase():
                 self.dicos_countries[w][d_loca[i]].append(d_data[i])
             self.dict_sum_data[w] = defaultdict(list)
             self.total_current_cases[w] = defaultdict(list)
-            self.masked_points[w] = defaultdict(list)
             self.diff_days[w] = defaultdict(list)
             for location in self.dicos_countries[w]:
                 res = [sum(i) for i in zip(*self.dicos_countries[w][location])]
@@ -257,8 +261,8 @@ class DataBase():
     def get_dates(self):
         return self.dates
 
-    def get_countries(self):
-        return np.array(tuple(self.get_masked_points()[self.available_keys_words[0]].keys()))
+    def get_locations(self):
+        return np.array(tuple(self.get_diff_days()[self.available_keys_words[0]].keys()))
 
     def get_stats(self, **kwargs):
         if not isinstance(kwargs['location'], list):
@@ -301,8 +305,14 @@ class DataBase():
         else:
             raise TypeError(
                 "Invalid keyword type argument %s , waiting for Cumul or Diff." % key)
+
         if ascend == False:
-            out = out[::-1]
+            if out.shape[0] == 1:
+                out = out[0][::-1]
+                out = np.array([out])
+            else:
+                out = out[::-1]
+
         i = 0
         data = {}
         for coun in clist:
