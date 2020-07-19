@@ -99,7 +99,7 @@ class DataBase():
             pandas_jhu_db = pandas_jhu_db.rename(columns={'Country/Region':'location'})
             pandas_jhu_db = pandas_jhu_db.sort_values(by=['location'])
             pandas_jhu_db = pandas_jhu_db.set_index('location')
-            self.dates    = sorted(pandas.to_datetime(pandas_jhu_db.columns,errors='coerce'))
+            self.dates    = pandas.to_datetime(pandas_jhu_db.columns,errors='coerce')
             pandas_jhu[ext] = pandas_jhu_db
         self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
         return pandas_jhu
@@ -129,7 +129,7 @@ class DataBase():
             pandas_temp   = pandas_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
             pandas_temp   = pandas_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
             pandas_aphp[w] = pandas_temp
-            self.dates    = sorted(pandas.to_datetime(pandas_aphp[w].columns,errors='coerce'))
+            self.dates    = pandas.to_datetime(pandas_aphp[w].columns,errors='coerce')
         self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
         return pandas_aphp
 
@@ -170,10 +170,11 @@ class DataBase():
                 days=max(pandas_santepublic_db['date']) + timedelta(days=i+1)
                 pandas_temp.insert(loc=last_column+i,column=days.strftime("%m/%d/%y"),value=a)
             pandas_santepublic[w] = pandas_temp
-            self.dates    = sorted(pandas.to_datetime(pandas_santepublic[w].columns,errors='coerce'))
+            self.dates    = pandas.to_datetime(pandas_santepublic[w].columns,errors='coerce')
             self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
         self.available_keys_words += available_keys_words_pub
         return pandas_santepublic
+
 
     def parse_convert_owid(self):
         ''' Our World in Data
@@ -201,7 +202,7 @@ class DataBase():
             pandas_owid_temp = pandas_owid_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
             pandas_owid_temp = pandas_owid_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
             pandas_owid[w] = pandas_owid_temp
-            self.dates    = sorted(pandas.to_datetime(pandas_owid[w] .columns,errors='coerce'))
+            self.dates    = pandas.to_datetime(pandas_owid[w] .columns,errors='coerce')
         self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
         return pandas_owid
 
@@ -218,7 +219,6 @@ class DataBase():
             if self.db != 'aphp':
                 d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db(),interpret_region=True)
             for i in range(len(d_loca)):
-
                 location=d_loca[i]
                 temp=[]
                 val=d_data[i]
@@ -275,6 +275,7 @@ class DataBase():
             (c, (self.get_cumul_days()[kwargs['which']][c])) for c in clist).values()))
 
         option = kwargs.get('option', None)
+        ascend = kwargs.get('ascending', True)
         if option == 'nonneg':
             diffout = np.array(diffout, dtype=float)
             sumout = np.array(sumout, dtype=float)
@@ -300,12 +301,17 @@ class DataBase():
         else:
             raise TypeError(
                 "Invalid keyword type argument %s , waiting for Cumul or Diff." % key)
+        if ascend == False:
+            out = out[::-1]
         i = 0
         data = {}
         for coun in clist:
+            datos=[dt.strptime(d, '%m/%d/%y') for d in self.get_dates()]
+            if ascend == False:
+                datos = datos[::-1]
             data[i] = {
                 'location':[coun]*len(out[i]),
-                'date': [dt.strptime(datos, '%m/%d/%y') for datos in self.get_dates()],
+                'date': datos,
                 kwargs['which']: out[i]
                 }
             i+=1
