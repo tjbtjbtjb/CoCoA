@@ -141,16 +141,18 @@ class DataBase():
         ''' French data.gouv : Sante Public
         homepage: https://www.data.gouv.fr/fr/datasets/donnees-relatives-aux-resultats-des-tests-virologiques-covid-19/
         Parse and convert Sante Public data structure to JHU one for historical raison
-        t	Number of tests performed
+        T	Number of tests performed
+        P	Number of positive tests
         cl_age90	Age class
-        p	Number of positive tests
+
         '''
         self.database_url="https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675"
         pandas_santepublic_db = pandas.read_csv(self.database_url,sep = ';')
+        pandas_santepublic_db=pandas_santepublic_db.loc[pandas_santepublic_db["cl_age90"]==0]
         pandas_santepublic_db = pandas_santepublic_db.rename(columns={'dep':'location'}).rename(columns={'jour':'date'}).\
         rename(columns={'P':'total_cases'}).rename(columns={'T':'total_tests'})
         pandas_santepublic_db['date'] = pandas.to_datetime(pandas_santepublic_db['date'],errors='coerce')
-        database_columns_not_computed = ['date','location','sexe']
+        database_columns_not_computed = ['date','location','cl_age90']
         available_keys_words_pub = [i for i in pandas_santepublic_db.columns.values.tolist() if i not in database_columns_not_computed]
         if min(pandas_santepublic_db['date']) < self.aphp_date_min or max(pandas_santepublic_db['date']) > self.aphp_date_max:
             print("Check the APHP and SantePublique dates ! You shouln't be here ...")
@@ -336,3 +338,12 @@ class DataBase():
                 return out[0]
             else:
                 return out.T
+
+    def cumul_over_several_days(self,df,nb_days):
+        which=df.columns[-1]
+        index = df[df[which].apply(np.isnan)]
+        to_remove=(index['date'].values)
+        df = df.loc[~df['date'].isin(to_remove)]
+        df = df.groupby('date').agg({which:'sum'})
+        df=df.reset_index()
+        return df.sort_values('date',ascending=True).rolling(str(nb_days)+'D', on='date').sum()
