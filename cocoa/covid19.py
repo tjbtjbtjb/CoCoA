@@ -339,11 +339,20 @@ class DataBase():
             else:
                 return out.T
 
-    def cumul_over_several_days(self,df,nb_days):
+    def coherent_remove_nan(self,df):
+        ''' Find all dates where there are a NaN and remove all row
+        according to this date , this is for coherent sum analyse stuff '''
         which=df.columns[-1]
         index = df[df[which].apply(np.isnan)]
-        to_remove=(index['date'].values)
-        df = df.loc[~df['date'].isin(to_remove)]
+        if index.empty == False:
+            to_remove=(index['date'].values)
+            df = df.loc[~df['date'].isin(to_remove)]
+        return df
+
+    def cumul_over_several_days(self,df,nb_days):
+        ''' return a cumulative pandas sum over nb_days'''
+        which=df.columns[-1]
+        df=self.coherent_remove_nan(df)
         df = df.groupby('date').agg({which:'sum'})
         df=df.reset_index()
         return df.sort_values('date',ascending=True).rolling(str(nb_days)+'D', on='date').sum()
