@@ -286,7 +286,6 @@ def map(**kwargs):
 
 
     for k in [wlist]:
-        print(k)
         if k in _reg.get_region_list():
             k_lst=_reg.get_countries_from_region(k)
             print(k_lst)
