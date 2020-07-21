@@ -53,6 +53,34 @@ class CocoDisplay():
         self.database=database
         if self.database.get_db() != 'aphp':
             self.geo = coge.GeoManager('name')
+        self.base_fig = self.standardfig()
+        self.test_pass = False
+        self.increment=1
+
+    def standardfig(self,axis_type='linear'):
+         return figure(plot_width=600, plot_height=400,y_axis_type=axis_type, x_axis_type="datetime",tools=['box_zoom,box_select,crosshair,reset'])
+
+    def cocoa_time_plot(self, babepandas,which_to_plot,which_to_label):
+        if self.test_pass == False:
+            self.hover_tool = HoverTool(tooltips=[
+                ('location','@'+str(which_to_label)),
+                ('Data', '@'+str(which_to_plot)),
+                ('date', '@date{%F}')],
+                formatters={'@date': 'datetime'}
+                )
+            self.base_fig.add_tools(self.hover_tool)
+            self.base_fig.xaxis.formatter = DatetimeTickFormatter(
+                days=["%d %B %Y"], months=["%d %B %Y"], years=["%d %B %Y"])
+            self.test_pass = True
+        src=ColumnDataSource(babepandas)
+        name=babepandas[which_to_label].head(1)[0]
+        self.base_fig.line(x='date', y=which_to_plot, source=src,line_color=self.colors[self.increment%10],
+        legend_label=name,line_width=2)
+        self.base_fig.legend.location = "bottom_left"
+        self.base_fig.legend.title_text_font_style = "bold"
+        self.base_fig.legend.title_text_font_size = "15px"
+        self.increment+=1
+        return self.base_fig
 
     def DefFigStatic(self, **kwargs):
         if not isinstance(kwargs['location'], list):
@@ -60,48 +88,26 @@ class CocoDisplay():
         else:
             clist = kwargs['location']
         panels = []
-
         if self.database.get_db() != 'aphp':
             clist=self.geo.to_standard(clist,output='list',interpret_region=True)
         clist_cp = clist.copy()
-
         option = kwargs.get('option', None)
-
         if option == 'nonneg':
             babypandas = self.database.get_stats( which=kwargs['which'], type=kwargs['type'], location=clist_cp,
                                          output='pandas', option='nonneg')
-
         else:
             babypandas = self.database.get_stats( which=kwargs['which'], type=kwargs['type'], location=clist_cp,
                                          output='pandas')
         self.cocoa_pandas = babypandas
-
         for axis_type in ["linear", "log"]:
-            self.hover_tool = HoverTool(tooltips=[
-                        ('location',"@location"),
-                        (kwargs['which'], '@'+kwargs['which']),
-                        ('date', '@date{%F}')],
-                        formatters={'@date': 'datetime'}
-            )
-            fig = figure(plot_width=600, plot_height=400, y_axis_type=axis_type, x_axis_type="datetime",
-                         tools=[self.hover_tool, 'box_zoom,box_select,crosshair,reset'])
-            fig.xaxis.formatter = DatetimeTickFormatter(
-                days=["%d %B %Y"], months=["%d %B %Y"], years=["%d %B %Y"])
 
-            i = 0
+            self.base_fig = self.standardfig(axis_type)
+            self.test_pass = False
             for coun in sorted(clist):
-                name=coun
                 filter_data = babypandas.loc[babypandas['location']==coun]
-                src=ColumnDataSource(filter_data)
-                fig.line(x='date', y=kwargs['which'], source=src,line_color=self.colors[i%10], legend_label=coun, line_width=2,name=coun)
-                i += 1
-            fig.legend.location = "bottom_left"
-            if kwargs['which'] == 'confirmed' and self.database == 'aphp':
-                kwargs['which'] = 'Rea.'
-            fig.legend.title = kwargs['which'].upper()
-            fig.legend.title_text_font_style = "bold"
-            fig.legend.title_text_font_size = "15px"
-            panel = Panel(child=fig, title=axis_type)
+                name=filter_data['location'].head(1)[0]
+                self.base_fig =self.cocoa_time_plot(filter_data,kwargs['which'],'location')
+            panel = Panel(child=self.base_fig , title=axis_type)
             panels.append(panel)
         tabs = Tabs(tabs=panels)
         return tabs
