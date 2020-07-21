@@ -46,7 +46,7 @@ import json
 
 # --- Needed global private variables ----------------------------------
 _listwhom=['jhu',    # John Hopkins University first base, default
-            'SPF']   # Sante publique France
+            'spf']   # Sante publique France
 _whom = _listwhom[0] # default base
 
 _db = coco.DataBase('jhu')
@@ -226,8 +226,7 @@ def plot(**kwargs):
     else:
         t=get(**kwargs,output='pandas')
 
-    which=kwargs.get('which',None)
-
+    which=kwargs.get('which',listwhich()[0])
     yscale=kwargs.get('yscale','lin')
     if yscale=='lin':
         fplot=plt.plot
@@ -235,9 +234,9 @@ def plot(**kwargs):
         fplot=plt.semilogy
     else:
         raise CocoaKeyError('yscale option "'+yscale+'" is not valid. See help.')
-
+    print("---",t)
     for k in t.location.unique():
-
+        print(t[t.location==k][which])
         fplot(t[t.location==k].date,t[t.location==k][which],label=k)
 
     plt.legend()

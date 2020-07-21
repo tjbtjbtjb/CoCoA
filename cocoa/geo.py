@@ -110,8 +110,8 @@ class GeoManager():
         db               -- database name to help conversion.
                             Default : None, meaning best effort to convert.
                             Known database : jhu, wordometer
-        interpret_region -- Boolean, default=False. If yes, the output should 
-                            be only 'list'.  
+        interpret_region -- Boolean, default=False. If yes, the output should
+                            be only 'list'.
         """
 
         output=kwargs.get('output',self.get_list_output()[0])
@@ -123,16 +123,16 @@ class GeoManager():
         if db not in self.get_list_db():
             raise CocoaDbError('Unknown database "'+db+'" for translation to '
                 'standardized location names. See get_list_db() or help.')
-        
+
         interpret_region=kwargs.get('interpret_region',False)
         if not isinstance(interpret_region,bool):
             raise CocoaTypeError('The interpret_region argument is a boolean, '
                 'not a '+str(type(interpret_region)))
-                
+
         if interpret_region==True and output!='list':
             raise CocoaKeyError('The interpret_region True argument is incompatible '
                 'with non list output option.')
-        
+
         if isinstance(w,str):
             w=[w]
         elif not isinstance(w,list):
@@ -329,7 +329,7 @@ class GeoInfo():
             raise CocoaTypeError('You should provide a valid input pandas'
                 ' DataFrame as input. See help.')
         p=p.copy()
-        
+
         overload=kwargs.get('overload',False)
         if not isinstance(overload,bool):
             raise CocoaTypeError('The overload option should be a boolean.')
@@ -347,7 +347,7 @@ class GeoInfo():
             raise CocoaKeyError('Some fields already exist in you panda '
                 'dataframe columns. You may set overload to True.')
 
-        geofield=kwargs.get('geofield','country')
+        geofield=kwargs.get('geofield','location')
         if not isinstance(geofield,str):
             raise CocoaTypeError('The geofield should be given as a '
                 'string.')
@@ -418,22 +418,22 @@ class GeoInfo():
                         suffixes=('','_tmp')).drop(['iso3_tmp2'],axis=1)
             # ----------------------------------------------------------
             elif f in ['region_code_list','region_name_list']:
-                
+
                 if f == 'region_code_list':
                     ff = 'region'
                 elif f == 'region_name_list':
                     ff = 'region_name'
-                    
+
                 p[f]=p.merge(self._grp[['iso3',ff]],how='left',\
                     left_on='iso3_tmp',right_on='iso3',\
                     suffixes=('','_tmp')) \
                     .groupby('iso3_tmp')[ff].apply(list).to_list()
-            # ----------------------------------------------------------    
+            # ----------------------------------------------------------
             elif f in ['capital']:
                 p[f]=p.merge(self._grp[['iso3',f]].drop_duplicates(), \
                     how='left',left_on='iso3_tmp',right_on='iso3',\
                     suffixes=('','_tmp'))[f]
-                
+
             # ----------------------------------------------------------
             elif f == 'geometry':
                 if self._data_geometry.empty:

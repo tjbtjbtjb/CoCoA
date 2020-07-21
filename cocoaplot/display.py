@@ -60,20 +60,31 @@ class CocoDisplay():
     def standardfig(self,axis_type='linear'):
          return figure(plot_width=600, plot_height=400,y_axis_type=axis_type, x_axis_type="datetime",tools=['box_zoom,box_select,crosshair,reset'])
 
-    def cocoa_time_plot(self, babepandas,which_to_plot,which_to_label):
+    def cocoa_time_plot(self, babepandas,which_to_plot,which_to_label=None):
+        ''' Simple bokeh plot with label + toolsbox including hover_tool'''
         if self.test_pass == False:
-            self.hover_tool = HoverTool(tooltips=[
-                ('location','@'+str(which_to_label)),
-                ('Data', '@'+str(which_to_plot)),
-                ('date', '@date{%F}')],
-                formatters={'@date': 'datetime'}
-                )
+            if which_to_label:
+                self.hover_tool = HoverTool(tooltips=[
+                    ('location','@'+str(which_to_label)),
+                    ('Data', '@'+str(which_to_plot)),
+                    ('date', '@date{%F}')],
+                    formatters={'@date': 'datetime'}
+                    )
+            else:
+                self.hover_tool = HoverTool(tooltips=[
+                    ('Data', '@'+str(which_to_plot)),
+                    ('date', '@date{%F}')],
+                    formatters={'@date': 'datetime'}
+                    )
             self.base_fig.add_tools(self.hover_tool)
             self.base_fig.xaxis.formatter = DatetimeTickFormatter(
                 days=["%d %B %Y"], months=["%d %B %Y"], years=["%d %B %Y"])
             self.test_pass = True
         src=ColumnDataSource(babepandas)
-        name=babepandas[which_to_label].head(1)[0]
+        if which_to_label:
+            name=babepandas[which_to_label].head(1)[0]
+        else:
+            name = 'chart'
         self.base_fig.line(x='date', y=which_to_plot, source=src,line_color=self.colors[self.increment%10],
         legend_label=name,line_width=2)
         self.base_fig.legend.location = "bottom_left"
