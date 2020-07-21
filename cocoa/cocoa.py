@@ -284,26 +284,28 @@ def map(**kwargs):
 
     p=p[p['geometry']!=None] # if some countries does not have an available geometry
 
-    for k in wlist:
+
+    for k in [wlist]:
+        print(k)
         if k in _reg.get_region_list():
             k_lst=_reg.get_countries_from_region(k)
-            p.loc[p["country"].isin(k_lst),"country_name"]=k
-            p=p.dissolve(aggfunc='sum',by='country_name') # merge the geometry and sum the cases for region
+            print(k_lst)
+            p.loc[p["location"].isin(k_lst),"location"]=k
+            p=p.dissolve(aggfunc='sum',by='location') # merge the geometry and sum the cases for region
 
     p["cname"]=p.index
-
     #Read data to json
     merged_json = json.loads(p.to_json())
+
     #Convert to str like object
     json_data = json.dumps(merged_json)
-
     geosource = GeoJSONDataSource(geojson = json_data)
 
     #Define a sequential multi-hue color palette.
     palette = brewer['RdYlGn'][10] # see https://docs.bokeh.org/en/latest/docs/reference/palettes.html
 
     hover = HoverTool(tooltips = [ ('Country','@cname'),
-                              ('Cases', '@cases') ] )
+                              ('Cases', '@'+str(which)) ] )
 
     #Instantiate LinearColorMapper that linearly maps numbers in a range, into a sequence of colors.
     color_mapper = LinearColorMapper(palette = palette)#, low = -50, high=50)
@@ -321,7 +323,7 @@ def map(**kwargs):
     f.ygrid.grid_line_color = None
 
     #Add patch renderer to figure.
-    f.patches('xs','ys', source = geosource,fill_color = {'field' :'cases', 'transform' : color_mapper},\
+    f.patches('xs','ys', source = geosource,fill_color = {'field' :which, 'transform' : color_mapper},\
           line_color = 'black', line_width = 0.25, fill_alpha = 1)
 
     #Specify figure layout.
