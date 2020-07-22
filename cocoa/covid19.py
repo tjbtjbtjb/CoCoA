@@ -321,12 +321,15 @@ class DataBase():
             temp=[]
             for coun in clist:
                 if len(out[i]):
-                    data = {
-                        'location':[coun]*len(out[i]),
-                        'date': datos,
-                        kwargs['which']: out[i]
-                        }
-                    temp.append(pd.DataFrame(data))
+                    val = out[i]
+                else:
+                    val = [np.nan]*len(datos)
+                data = {
+                    'location':[coun]*len(datos),
+                    'date': datos,
+                    kwargs['which']:val
+                    }
+                temp.append(pd.DataFrame(data))
                 i+=1
             return pd.concat(temp)
         else:
