@@ -189,7 +189,6 @@ def get(**kwargs):
     elif which not in listwhich():
         raise CocoaKeyError('Which option '+which+' not supported. '
                             'See listwhich() for list.')
-
     return _db.get_stats(which=which,type=what,location=where,output=output)
 
 # ----------------------------------------------------------------------
@@ -275,6 +274,7 @@ def map(**kwargs):
     p=get(**kwargs,output='pandas')
 
     which=kwargs.get('which',None)
+
     if which == None:
         which = listwhich()[0]
 
@@ -288,7 +288,6 @@ def map(**kwargs):
     for k in [wlist]:
         if k in _reg.get_region_list():
             k_lst=_reg.get_countries_from_region(k)
-            print(k_lst)
             p.loc[p["location"].isin(k_lst),"location"]=k
             p=p.dissolve(aggfunc='sum',by='location') # merge the geometry and sum the cases for region
 
