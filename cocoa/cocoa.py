@@ -271,11 +271,9 @@ def hist(**kwargs):
 
     val=[]
     coun=[]
-    for _, grp in t.groupby(pd.Grouper(key='location')):#
+    for _, grp in t.groupby(pd.Grouper(key='location')):
         val.append(grp[which].values)
         coun.append(grp.location.values[0])
-    df=pd.DataFrame(val)
-
     plt.hist(val,label=coun)
     plt.legend(prop={'size': 10})
     plt.title(str(which))
