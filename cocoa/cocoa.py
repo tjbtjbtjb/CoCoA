@@ -40,7 +40,7 @@ from cocoa.error import *
 
 from bokeh.io import output_notebook, show, output_file
 from bokeh.plotting import figure
-from bokeh.models import GeoJSONDataSource, LinearColorMapper, ColorBar, HoverTool
+from bokeh.models import GeoJSONDataSource, LinearColorMapper,LogColorMapper, ColorBar, HoverTool,LogTicker
 from bokeh.palettes import brewer
 import json
 
@@ -259,7 +259,26 @@ def hist(**kwargs):
                 When the 'input' keyword is set, where, what, which,
                 whom keywords are ignored.
     """
-    plt.hist(get(**kwargs))
+    input_arg=kwargs.get('input',None)
+    which=kwargs.get('which',listwhich()[0])
+    if input_arg != None:
+        if not isinstance(input_arg,pd.DataFrame):
+            raise CocoaTypeError('Waiting input as valid cocoa pandas '
+                'dataframe. See help.')
+        t=input_arg
+    else:
+        t=get(**kwargs,output='pandas')
+
+    val=[]
+    coun=[]
+    for _, grp in t.groupby(pd.Grouper(key='location')):#
+        val.append(grp[which].values)
+        coun.append(grp.location.values[0])
+    df=pd.DataFrame(val)
+
+    plt.hist(val,label=coun)
+    plt.legend(prop={'size': 10})
+    plt.title(str(which))
     plt.show()
 
 # ----------------------------------------------------------------------
@@ -307,6 +326,7 @@ def map(**kwargs):
 
     #Instantiate LinearColorMapper that linearly maps numbers in a range, into a sequence of colors.
     color_mapper = LinearColorMapper(palette = palette)#, low = -50, high=50)
+
     #Define custom tick labels for color bar.
     #tick_labels = {'0': '0%', '5': '5%', '10':'10%', '15':'15%', '20':'20%'}#, '25':'25%', '30':'30%','35':'35%', '40': '>40%'}
 
