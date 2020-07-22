@@ -40,7 +40,7 @@ from cocoa.error import *
 
 from bokeh.io import output_notebook, show, output_file
 from bokeh.plotting import figure
-from bokeh.models import GeoJSONDataSource, LinearColorMapper, ColorBar, HoverTool
+from bokeh.models import GeoJSONDataSource, LinearColorMapper,LogColorMapper, ColorBar, HoverTool,LogTicker
 from bokeh.palettes import brewer
 import json
 
@@ -189,7 +189,6 @@ def get(**kwargs):
     elif which not in listwhich():
         raise CocoaKeyError('Which option '+which+' not supported. '
                             'See listwhich() for list.')
-
     return _db.get_stats(which=which,type=what,location=where,output=output)
 
 # ----------------------------------------------------------------------
@@ -260,7 +259,24 @@ def hist(**kwargs):
                 When the 'input' keyword is set, where, what, which,
                 whom keywords are ignored.
     """
-    plt.hist(get(**kwargs))
+    input_arg=kwargs.get('input',None)
+    which=kwargs.get('which',listwhich()[0])
+    if input_arg != None:
+        if not isinstance(input_arg,pd.DataFrame):
+            raise CocoaTypeError('Waiting input as valid cocoa pandas '
+                'dataframe. See help.')
+        t=input_arg
+    else:
+        t=get(**kwargs,output='pandas')
+
+    val=[]
+    coun=[]
+    for _, grp in t.groupby(pd.Grouper(key='location')):
+        val.append(grp[which].values)
+        coun.append(grp.location.values[0])
+    plt.hist(val,label=coun)
+    plt.legend(prop={'size': 10})
+    plt.title(str(which))
     plt.show()
 
 # ----------------------------------------------------------------------
@@ -275,6 +291,7 @@ def map(**kwargs):
     p=get(**kwargs,output='pandas')
 
     which=kwargs.get('which',None)
+
     if which == None:
         which = listwhich()[0]
 
@@ -288,7 +305,6 @@ def map(**kwargs):
     for k in [wlist]:
         if k in _reg.get_region_list():
             k_lst=_reg.get_countries_from_region(k)
-            print(k_lst)
             p.loc[p["location"].isin(k_lst),"location"]=k
             p=p.dissolve(aggfunc='sum',by='location') # merge the geometry and sum the cases for region
 
@@ -308,6 +324,7 @@ def map(**kwargs):
 
     #Instantiate LinearColorMapper that linearly maps numbers in a range, into a sequence of colors.
     color_mapper = LinearColorMapper(palette = palette)#, low = -50, high=50)
+
     #Define custom tick labels for color bar.
     #tick_labels = {'0': '0%', '5': '5%', '10':'10%', '15':'15%', '20':'20%'}#, '25':'25%', '30':'30%','35':'35%', '40': '>40%'}
 
