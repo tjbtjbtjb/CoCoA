@@ -133,7 +133,6 @@ class DataBase():
             pandas_aphp[w] = pandas_temp
             self.dates    = pandas.to_datetime(pandas_aphp[w].columns,errors='coerce')
         self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
-
         return pandas_aphp
 
 
@@ -308,31 +307,28 @@ class DataBase():
             raise TypeError(
                 "Invalid keyword type argument %s , waiting for Cumul or Diff." % key)
 
+        datos=[dt.strptime(d, '%m/%d/%y') for d in self.get_dates()]
         if ascend == False:
+            datos = datos[::-1]
             if out.shape[0] == 1:
                 out = out[0][::-1]
-                out = np.array([out])
+                out = np.array(out)
             else:
                 out = out[::-1]
 
-        i = 0
-        data = {}
-        for coun in clist:
-            datos=[dt.strptime(d, '%m/%d/%y') for d in self.get_dates()]
-            if ascend == False:
-                datos = datos[::-1]
-            data[i] = {
-                'location':[coun]*len(out[i]),
-                'date': datos,
-                kwargs['which']: out[i]
-                }
-            i+=1
         if output == "pandas":
-            babypandas = pd.DataFrame(data[0])
-            for i in range(1,len(clist)):
-                df=pd.DataFrame(data[i])
-                babypandas=babypandas.append(df)
-            return babypandas
+            i = 0
+            temp=[]
+            for coun in clist:
+                if len(out[i]):
+                    data = {
+                        'location':[coun]*len(out[i]),
+                        'date': datos,
+                        kwargs['which']: out[i]
+                        }
+                    temp.append(pd.DataFrame(data))
+                i+=1
+            return pd.concat(temp)
         else:
             if out.shape[0] == 1:
                 return out[0]
@@ -340,7 +336,7 @@ class DataBase():
                 return out.T
 
     def coherent_remove_nan(self,df):
-        ''' Find all dates where there are a NaN and remove all row
+        ''' Find all dates where there are a NaN value and remove all row
         according to this date , this is for coherent sum analyse stuff '''
         which=df.columns[-1]
         index = df[df[which].apply(np.isnan)]
