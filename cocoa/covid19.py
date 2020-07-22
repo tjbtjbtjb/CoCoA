@@ -30,7 +30,7 @@ import cocoa.geo as coge
 class DataBase():
     ''' Parse the chosen database and a return a pandas '''
     def __init__(self,db_name):
-        self.database_name=['jhu','aphp','owid']
+        self.database_name=['jhu','spf','owid']
         self.pandas_datase = {}
         self.available_keys_words=[]
         self.dates = []
@@ -41,7 +41,7 @@ class DataBase():
         self.location_more_info={}
         self.database_columns_not_computed={}
         self.db =  db_name
-        if self.db != 'aphp':
+        if self.db != 'spf':
             self.geo = coge.GeoManager('name')
 
         if self.db not in self.database_name:
@@ -50,13 +50,13 @@ class DataBase():
             if self.db == 'jhu':
                 print('JHU aka Johns Hopkins database selected ...')
                 self.pandas_datase = self.parse_convert_jhu()
-            elif self.db == 'aphp':
-                print('APHP database selected ...')
+            elif self.db == 'spf':
+                print('SPF aka Sante Publique France database selected ...')
                 full_pandas = {}
-                self.pandas_datase=self.parse_convert_aphp()
-                print('... Sante Public will be also parsed ...')
-                pandas_santepublic = self.parse_convert_santepublic()
-                self.pandas_datase.update(pandas_santepublic)
+                self.pandas_datase=self.parse_convert_spf()
+                print('... two differents db from SPF will be parsed ...')
+                pandas_spf2 = self.parse_convert_spf2()
+                self.pandas_datase.update(pandas_spf2)
             elif self.db == 'owid':
                 print('OWID aka \"Our World in Data\" database selected ...')
                 self.pandas_datase  = self.parse_convert_owid()
@@ -103,40 +103,40 @@ class DataBase():
         self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
         return pandas_jhu
 
-    def parse_convert_aphp(self):
-        ''' French data.gouv : APHP hospital data
+    def parse_convert_spf(self):
+        ''' French data.gouv : spf hospital data
         homepage: https://www.data.gouv.fr/fr/datasets/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/
-        Parse and convert APHP data structure to JHU one for historical raison
+        Parse and convert spf data structure to JHU one for historical raison
         hosp	Number of people currently hospitalized
         rea  Number of people currently in resuscitation or critical care
         rad	Total amount of patient that returned home
         dc	Total amout of deaths at the hospital
         '''
         self.database_url="https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7"
-        pandas_aphp_db = pandas.read_csv(self.database_url,sep = ';')
+        pandas_spf_db = pandas.read_csv(self.database_url,sep = ';')
 
-        pandas_aphp_db = pandas_aphp_db.loc[pandas_aphp_db['sexe'] == 0].rename(columns={'dep':'location'})\
+        pandas_spf_db = pandas_spf_db.loc[pandas_spf_db['sexe'] == 0].rename(columns={'dep':'location'})\
         .rename(columns={'jour':'date'}).rename(columns={'rea':'resuscitation'}).rename(columns={'rad':'recovered'}).\
             rename(columns={'dc':'deaths'})
-        pandas_aphp_db['date'] = pandas.to_datetime(pandas_aphp_db['date'],errors='coerce')
-        self.aphp_date_min , self.aphp_date_max = 0, 0
-        self.aphp_date_min,self.aphp_date_max = min(pandas_aphp_db['date']),max(pandas_aphp_db['date'])
+        pandas_spf_db['date'] = pandas.to_datetime(pandas_spf_db['date'],errors='coerce')
+        self.spf_date_min , self.spf_date_max = 0, 0
+        self.spf_date_min,self.spf_date_max = min(pandas_spf_db['date']),max(pandas_spf_db['date'])
         database_columns_not_computed=['date','location','sexe']
-        self.available_keys_words = [i for i in pandas_aphp_db.columns.values.tolist() if i not in database_columns_not_computed]
-        pandas_aphp={}
+        self.available_keys_words = [i for i in pandas_spf_db.columns.values.tolist() if i not in database_columns_not_computed]
+        pandas_spf={}
         for w in self.available_keys_words:
-            pandas_temp   = pandas_aphp_db[['location','date',w]]
+            pandas_temp   = pandas_spf_db[['location','date',w]]
             pandas_temp=pandas_temp.groupby(['location','date']).sum()
             pandas_temp.reset_index(inplace=True)
             pandas_temp   = pandas_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
             pandas_temp   = pandas_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
-            pandas_aphp[w] = pandas_temp
-            self.dates    = pandas.to_datetime(pandas_aphp[w].columns,errors='coerce')
+            pandas_spf[w] = pandas_temp
+            self.dates    = pandas.to_datetime(pandas_spf[w].columns,errors='coerce')
         self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
-        return pandas_aphp
+        return pandas_spf
 
 
-    def parse_convert_santepublic(self):
+    def parse_convert_spf2(self):
         ''' French data.gouv : Sante Public
         homepage: https://www.data.gouv.fr/fr/datasets/donnees-relatives-aux-resultats-des-tests-virologiques-covid-19/
         Parse and convert Sante Public data structure to JHU one for historical raison
@@ -146,40 +146,40 @@ class DataBase():
 
         '''
         self.database_url="https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675"
-        pandas_santepublic_db = pandas.read_csv(self.database_url,sep = ';')
-        pandas_santepublic_db=pandas_santepublic_db.loc[pandas_santepublic_db["cl_age90"]==0]
-        pandas_santepublic_db = pandas_santepublic_db.rename(columns={'dep':'location'}).rename(columns={'jour':'date'}).\
+        pandas_spf2_db = pandas.read_csv(self.database_url,sep = ';')
+        pandas_spf2_db=pandas_spf2_db.loc[pandas_spf2_db["cl_age90"]==0]
+        pandas_spf2_db = pandas_spf2_db.rename(columns={'dep':'location'}).rename(columns={'jour':'date'}).\
         rename(columns={'P':'total_cases'}).rename(columns={'T':'total_tests'})
-        pandas_santepublic_db['date'] = pandas.to_datetime(pandas_santepublic_db['date'],errors='coerce')
+        pandas_spf2_db['date'] = pandas.to_datetime(pandas_spf2_db['date'],errors='coerce')
         database_columns_not_computed = ['date','location','cl_age90']
-        available_keys_words_pub = [i for i in pandas_santepublic_db.columns.values.tolist() if i not in database_columns_not_computed]
-        if min(pandas_santepublic_db['date']) < self.aphp_date_min or max(pandas_santepublic_db['date']) > self.aphp_date_max:
-            print("Check the APHP and SantePublique dates ! You shouln't be here ...")
+        available_keys_words_pub = [i for i in pandas_spf2_db.columns.values.tolist() if i not in database_columns_not_computed]
+        if min(pandas_spf2_db['date']) < self.spf_date_min or max(pandas_spf2_db['date']) > self.spf_date_max:
+            print("Check the spf and SantePublique dates ! You shouln't be here ...")
             exit()
-        delta_min = min(pandas_santepublic_db['date']) -  self.aphp_date_min
-        delta_max = self.aphp_date_max - max(pandas_santepublic_db['date'])
-        cp_pandas_santepublic = pandas_santepublic_db.copy()
-        cp_pandas_santepublic['date'] = cp_pandas_santepublic['date'].dt.strftime("%m/%d/%y")
-        cp_pandas_santepublic = (cp_pandas_santepublic.groupby(['location','date']).sum())
-        cp_pandas_santepublic.reset_index(inplace=True)
-        pandas_santepublic={}
+        delta_min = min(pandas_spf2_db['date']) -  self.spf_date_min
+        delta_max = self.spf_date_max - max(pandas_spf2_db['date'])
+        cp_pandas_spf2 = pandas_spf2_db.copy()
+        cp_pandas_spf2['date'] = cp_pandas_spf2['date'].dt.strftime("%m/%d/%y")
+        cp_pandas_spf2 = (cp_pandas_spf2.groupby(['location','date']).sum())
+        cp_pandas_spf2.reset_index(inplace=True)
+        pandas_spf2={}
         for w in available_keys_words_pub:
-            pandas_temp   = cp_pandas_santepublic[['location','date',w]]
+            pandas_temp   = cp_pandas_spf2[['location','date',w]]
             pandas_temp.reset_index(inplace=True)
             pandas_temp   = pandas_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
             a= np.nan*pandas_temp.shape[0]
             for i in range(delta_min.days):
-                days=self.aphp_date_min + timedelta(days=i)
+                days=self.spf_date_min + timedelta(days=i)
                 pandas_temp.insert(loc=0+i,column=days.strftime("%m/%d/%y"),value=a)
                 last_column=len(pandas_temp.columns)
             for i in range(0,delta_max.days):
-                days=max(pandas_santepublic_db['date']) + timedelta(days=i+1)
+                days=max(pandas_spf2_db['date']) + timedelta(days=i+1)
                 pandas_temp.insert(loc=last_column+i,column=days.strftime("%m/%d/%y"),value=a)
-            pandas_santepublic[w] = pandas_temp
-            self.dates    = pandas.to_datetime(pandas_santepublic[w].columns,errors='coerce')
+            pandas_spf2[w] = pandas_temp
+            self.dates    = pandas.to_datetime(pandas_spf2[w].columns,errors='coerce')
             self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
         self.available_keys_words += available_keys_words_pub
-        return pandas_santepublic
+        return pandas_spf2
 
 
     def parse_convert_owid(self):
@@ -222,7 +222,7 @@ class DataBase():
             d_loca = dict_copy['index']
             d_date = dict_copy['columns']
             d_data = dict_copy['data']
-            if self.db != 'aphp':
+            if self.db != 'spf':
                 d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db(),interpret_region=True)
             for i in range(len(d_loca)):
                 location=d_loca[i]
@@ -271,7 +271,7 @@ class DataBase():
         else:
             clist = kwargs['location']
 
-        if self.db != 'aphp':
+        if self.db != 'spf':
             clist=self.geo.to_standard(clist,output='list',interpret_region=True)
 
         diffout = np.array(
