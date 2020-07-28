@@ -348,15 +348,17 @@ class DataBase():
             df = df.loc[~df['date'].isin(to_remove)]
         return df
 
-    def cumul_over_several_days(self,df,nb_days,):
-        ''' return a cumulative pandas sum over nb_days'''
+    def cumul_over_several_days(self,df,nb_days):
+        ''' return a cumulative pandas sum over nb_days
+            add a new column to the pandas selected : sum + nb_days + D
+        '''
         which=df.columns[-1]
         df=self.coherent_remove_nan(df)
         if 'location' in df.columns:
             df = df.sort_values(['location','date']).set_index('date')
             df['Sum'+str(nb_days)+'D'] = df.groupby('location')[which].rolling(window=nb_days, freq='D').sum().values
         else:
-            df=df.sort_values('date',ascending=True).rolling(str(nb_days)+'D', on='date').sum()
+            df = df.sort_values('date',ascending=True).rolling(str(nb_days)+'D', on='date').sum()
         df = df[::-1]
         df=df.reset_index()
         return df
