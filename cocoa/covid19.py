@@ -267,9 +267,9 @@ class DataBase():
 
     def get_stats(self, **kwargs):
         if not isinstance(kwargs['location'], list):
-            clist = [kwargs['location']]
+            clist = ([kwargs['location']]).copy()
         else:
-            clist = kwargs['location']
+            clist = (kwargs['location']).copy()
 
         if self.db != 'spf':
             clist=self.geo.to_standard(clist,output='list',interpret_region=True)
