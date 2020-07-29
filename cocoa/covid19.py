@@ -195,7 +195,7 @@ class DataBase():
         # Drop tests_units : Units used by the location to report its testing data
         pandas_owid_db  = pandas_owid_db.drop(columns=['tests_units'])
         self.available_keys_words = ['total_cases', 'new_cases', 'total_deaths','new_deaths', 'total_cases_per_million',
-        'new_cases_per_million', 'total_deaths_per_million','new_deaths_per_million',  'new_tests',
+        'new_cases_per_million', 'total_deaths_per_million','new_deaths_per_million', 'total_tests', 'new_tests',
         'total_tests_per_thousand', 'new_tests_per_thousand', 'new_tests_smoothed', 'new_tests_smoothed_per_thousand','stringency_index']
         self.database_columns_for_index = [i for i in pandas_owid_db.columns.values.tolist() if i not in self.available_keys_words]
         pandas_owid =  {}
