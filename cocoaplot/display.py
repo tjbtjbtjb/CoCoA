@@ -51,47 +51,51 @@ class CocoDisplay():
         self.coco_circle = []
         self.coco_line = []
         self.database=database
-        if self.database.get_db() != 'aphp':
+        if self.database.get_db() != 'spf':
             self.geo = coge.GeoManager('name')
         self.base_fig = self.standardfig()
         self.test_pass = False
-        self.increment=1
+        self.increment = 1
 
     def standardfig(self,axis_type='linear'):
-         return figure(plot_width=600, plot_height=400,y_axis_type=axis_type, x_axis_type="datetime",tools=['box_zoom,box_select,crosshair,reset'])
+         return figure(plot_width=600, plot_height=400,y_axis_type=axis_type, x_axis_type="datetime",
+         tools=['box_zoom,box_select,crosshair,reset'])
 
-    def cocoa_time_plot(self, babepandas,which_to_plot,which_to_label=None):
+    def cocoa_time_plot(self, babepandas, name_data):
         ''' Simple bokeh plot with label + toolsbox including hover_tool'''
+        panels = []
+        w = babepandas['location'].unique()
         if self.test_pass == False:
-            if which_to_label:
-                self.hover_tool = HoverTool(tooltips=[
-                    ('location','@'+str(which_to_label)),
-                    ('Data', '@'+str(which_to_plot)),
-                    ('date', '@date{%F}')],
-                    formatters={'@date': 'datetime'}
-                    )
-            else:
-                self.hover_tool = HoverTool(tooltips=[
-                    ('Data', '@'+str(which_to_plot)),
-                    ('date', '@date{%F}')],
-                    formatters={'@date': 'datetime'}
-                    )
-            self.base_fig.add_tools(self.hover_tool)
+            hover_tool = HoverTool(tooltips=[
+                ('location','@location'),
+                ('Data', '@'+name_data),
+                ('date', '@date{%F}')],
+                formatters={'@date': 'datetime'}
+                )
             self.base_fig.xaxis.formatter = DatetimeTickFormatter(
                 days=["%d %B %Y"], months=["%d %B %Y"], years=["%d %B %Y"])
             self.test_pass = True
-        src=ColumnDataSource(babepandas)
-        if which_to_label:
-            name=babepandas[which_to_label].head(1)[0]
-        else:
-            name = 'chart'
-        self.base_fig.line(x='date', y=which_to_plot, source=src,line_color=self.colors[self.increment%10],
-        legend_label=name,line_width=2)
-        self.base_fig.legend.location = "bottom_left"
-        self.base_fig.legend.title_text_font_style = "bold"
-        self.base_fig.legend.title_text_font_size = "15px"
-        self.increment+=1
-        return self.base_fig
+
+        for axis_type in ["linear", "log"]:
+            i=0
+            self.base_fig = self.standardfig(axis_type)
+            self.base_fig.add_tools(hover_tool)
+            self.test_pass = False
+            for location in sorted(w):
+                    filter_data = babepandas.loc[babepandas['location']==location]
+                    name=location
+                    src=ColumnDataSource(filter_data)
+                    self.base_fig.line(x='date', y=name_data, source=src,
+                    line_color=self.colors[i],legend_label=name,line_width=2)
+                    i+=1
+            panel = Panel(child=self.base_fig , title=axis_type)
+            panels.append(panel)
+            self.base_fig.legend.location = "bottom_left"
+            self.base_fig.legend.title_text_font_style = "bold"
+            self.base_fig.legend.title_text_font_size = "5px"
+        tabs = Tabs(tabs=panels)
+        return tabs
+
 
     def DefFigStatic(self, **kwargs):
         if not isinstance(kwargs['location'], list):
@@ -99,7 +103,7 @@ class CocoDisplay():
         else:
             clist = kwargs['location']
         panels = []
-        if self.database.get_db() != 'aphp':
+        if self.database.get_db() != 'spf':
             clist=self.geo.to_standard(clist,output='list',interpret_region=True)
         clist_cp = clist.copy()
         option = kwargs.get('option', None)
@@ -130,7 +134,7 @@ class CocoDisplay():
         else:
             clist = kwargs['location']
 
-        if self.database != 'aphp':
+        if self.database != 'spf':
             clist=self.geo.to_standard(clist,output='list',interpret_region=True)
         clist_cp = clist.copy()
 
@@ -179,7 +183,7 @@ class CocoDisplay():
             fig.line(x='date', y=kwargs['which'], source=src2,
                      line_color='blue', line_width=2, line_alpha=.2)
 
-            if kwargs['which'] == 'confirmed' and self.database == 'aphp':
+            if kwargs['which'] == 'confirmed' and self.database == 'spf':
                 kwargs['which'] = 'Rea.'
             label = Label(x=70, y=350, x_units='screen', y_units='screen',
                           text=kwargs['which'], render_mode='css',
