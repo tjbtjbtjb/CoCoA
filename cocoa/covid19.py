@@ -142,14 +142,12 @@ class DataBase():
         Parse and convert Sante Public data structure to JHU one for historical raison
         T	Number of tests performed
         P	Number of positive tests
-        cl_age90	Age class
-
         '''
         self.database_url="https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675"
         pandas_spf2_db = pandas.read_csv(self.database_url,sep = ';')
         pandas_spf2_db=pandas_spf2_db.loc[pandas_spf2_db["cl_age90"]==0]
         pandas_spf2_db = pandas_spf2_db.rename(columns={'dep':'location'}).rename(columns={'jour':'date'}).\
-        rename(columns={'P':'total_cases'}).rename(columns={'T':'total_tests'})
+        rename(columns={'P':'nb_cases'}).rename(columns={'T':'nb_tests'})
         pandas_spf2_db['date'] = pandas.to_datetime(pandas_spf2_db['date'],errors='coerce')
         database_columns_not_computed = ['date','location','cl_age90']
         available_keys_words_pub = [i for i in pandas_spf2_db.columns.values.tolist() if i not in database_columns_not_computed]
