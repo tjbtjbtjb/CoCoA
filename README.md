@@ -1,4 +1,4 @@
-![CoCoA-Logo]('https://repository-images.githubusercontent.com/259977361/1916f080-07de-11eb-8ffa-5c948e4865ba')
+![CoCoA Logo](/misc/cocoa_640_320.png)
 
 CoCoA (COvid COlab Analysis) python package
 ===========================================
