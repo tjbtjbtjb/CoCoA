@@ -1,8 +1,6 @@
 ![CoCoA Logo](/misc/cocoa_640_320.png)
 
-CoCoA (COvid COlab Analysis) python package
-===========================================
-April/May 2020
+April/Oct 2020
 
 * Olivier Dadoun odadoun@gmail.com
 * Tristan Beau tristan.beau@gmail.com
