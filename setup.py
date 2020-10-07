@@ -24,6 +24,11 @@ setup(
     install_requires=['numpy','requests','pandas','matplotlib','bokeh','plotly','branca','folium','geopy','altair','lxml'],
     # *strongly* suggested for sharing
     version='0.2',
+    # Specify which Python versions you support. In contrast to the
+    # 'Programming Language' classifiers above, 'pip install' will check this
+    # and refuse to install the project if the version does not match. See
+    # https://packaging.python.org/guides/distributing-packages-using-setuptools/#python-requires
+    python_requires='>=3.5, <4',
     # The license can be anything you like
     license='MIT',
     description='CoCoA stands for COvid COlab Analysis project, which is an open source project initially designed to run in the Google colab environment.',
