@@ -21,12 +21,9 @@ setup(
     # Needed to actually package something
     packages=['cocoa','cocoaplot'],
     # Needed for dependencies
-    install_requires=['numpy','requests','pandas','matplotlib',\
-        'bokeh','plotly','branca','folium','geopy','altair',\
-        'pycountry','pycountry_convert','geopandas','shapely',\
-        'requests'],
+    install_requires=['numpy','requests','pandas','matplotlib','bokeh','plotly','branca','folium','geopy','altair','lxml'],
     # *strongly* suggested for sharing
-    version='easy_features',
+    version='0.2',
     # The license can be anything you like
     license='MIT',
     description='CoCoA stands for COvid COlab Analysis project, which is an open source project initially designed to run in the Google colab environment.',
