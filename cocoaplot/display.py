@@ -47,54 +47,86 @@ import altair as alt
 
 class CocoDisplay():
     def __init__(self, database):
-        self.colors =  bokeh.palettes.d3['Category20'][10]
+        self.colors =  bokeh.palettes.d3['Category20'][15]
         self.coco_circle = []
         self.coco_line = []
         self.database=database
         if self.database.get_db() != 'spf':
             self.geo = coge.GeoManager('name')
-        self.base_fig = self.standardfig()
-        self.test_pass = False
+        self.base_fig = None
+        self.hover_tool = None
         self.increment = 1
 
-    def standardfig(self,axis_type='linear'):
-         return figure(plot_width=600, plot_height=400,y_axis_type=axis_type, x_axis_type="datetime",
+    def standardfig(self,title=None, axis_type='linear',x_axis_type='datetime'):
+         return figure(title=title,plot_width=400, plot_height=300,y_axis_type=axis_type, x_axis_type=x_axis_type,
          tools=['box_zoom,box_select,crosshair,reset'])
 
-    def cocoa_time_plot(self, babepandas, name_data):
+    def cocoa_basic_plot(self, babepandas, names_data,ydata=None,title=None):
         ''' Simple bokeh plot with label + toolsbox including hover_tool'''
         panels = []
-        w = babepandas['location'].unique()
-        if self.test_pass == False:
-            hover_tool = HoverTool(tooltips=[
-                ('location','@location'),
-                ('Data', '@'+name_data),
-                ('date', '@date{%F}')],
-                formatters={'@date': 'datetime'}
-                )
-            self.base_fig.xaxis.formatter = DatetimeTickFormatter(
-                days=["%d %B %Y"], months=["%d %B %Y"], years=["%d %B %Y"])
-            self.test_pass = True
+        w = None
+        if 'location' in babepandas.columns:
+            w = babepandas['location'].unique()
+
+        self.base_fig = self.standardfig(title=title)
+
+        tooltips='Location: @location <br> Date: @date{%F} <br>  $name: @$name'
+        if type(names_data) == list or ydata:
+             tooltips='Date: @date{%F} <br>  $name: @$name'
+        self.hover_tool = HoverTool(tooltips=tooltips,formatters={'@date': 'datetime'})
+        self.base_fig.xaxis.formatter = DatetimeTickFormatter(
+            days=["%d %B %Y"], months=["%d %B %Y"], years=["%d %B %Y"])
 
         for axis_type in ["linear", "log"]:
+            j=0
             i=0
-            self.base_fig = self.standardfig(axis_type)
-            self.base_fig.add_tools(hover_tool)
-            self.test_pass = False
-            for location in sorted(w):
+            if ydata:
+                self.base_fig = self.standardfig(title=title,axis_type=axis_type,x_axis_type='log')
+            else:
+                self.base_fig = self.standardfig(title=title,axis_type=axis_type)
+
+            self.base_fig.add_tools(self.hover_tool)
+            if 'location' in babepandas.columns:
+             for location in sorted(w):
                     filter_data = babepandas.loc[babepandas['location']==location]
                     name=location
                     src=ColumnDataSource(filter_data)
-                    self.base_fig.line(x='date', y=name_data, source=src,
-                    line_color=self.colors[i],legend_label=name,line_width=2)
-                    i+=1
+                    j=0
+                    if type(names_data) == str:
+                            if ydata:
+                                self.base_fig.line(x=names_data, y=ydata, source=src,
+                                line_color=self.colors[i+2*j],legend_label=names_data+'vs'+ydata,line_width=2,name=ydata)
+                            else:
+                                self.base_fig.line(x='date', y=names_data, source=src,
+                                line_color=self.colors[i],legend_label=name,line_width=2,name=names_data)
+                            i+=1
+                    if type(names_data) == list:
+                            for i_data in sorted(names_data):
+                                self.base_fig.line(x='date', y=i_data, source=src,
+                                line_color=self.colors[2*j%15],legend_label=i_data,line_width=2,name=i_data)
+                                j+=1
+            else:
+                if type(names_data) == list:
+                    src=ColumnDataSource(babepandas)
+                    for i_data in sorted(names_data):
+                        self.base_fig.line(x='date', y=i_data, source=src,
+                        line_color=self.colors[j],legend_label=i_data,line_width=2,name=i_data)
+                        j+=1
+                if type(names_data) == str:
+                    src=ColumnDataSource(babepandas)
+                    self.base_fig.line(x=names_data, y=ydata, source=src,
+                    line_color=self.colors[i+2*j],legend_label=names_data+' vs '+ydata,line_width=2,name=ydata)
+
             panel = Panel(child=self.base_fig , title=axis_type)
             panels.append(panel)
+            self.base_fig.legend.background_fill_alpha = 0.4
             self.base_fig.legend.location = "bottom_left"
             self.base_fig.legend.title_text_font_style = "bold"
             self.base_fig.legend.title_text_font_size = "5px"
         tabs = Tabs(tabs=panels)
         return tabs
+
+
 
 
     def DefFigStatic(self, **kwargs):
@@ -116,12 +148,12 @@ class CocoDisplay():
         self.cocoa_pandas = babypandas
         for axis_type in ["linear", "log"]:
 
-            self.base_fig = self.standardfig(axis_type)
+            self.base_fig = self.standardfig(title=title,axis_type=axis_type)
             self.test_pass = False
             for coun in sorted(clist):
                 filter_data = babypandas.loc[babypandas['location']==coun]
                 name=filter_data['location'].head(1)[0]
-                self.base_fig =self.cocoa_time_plot(filter_data,kwargs['which'],'location')
+                self.base_fig =self.cocoa_basic_plot(filter_data,kwargs['which'],'location')
             panel = Panel(child=self.base_fig , title=axis_type)
             panels.append(panel)
         tabs = Tabs(tabs=panels)

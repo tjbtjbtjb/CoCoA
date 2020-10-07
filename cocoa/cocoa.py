@@ -46,7 +46,8 @@ import json
 
 # --- Needed global private variables ----------------------------------
 _listwhom=['jhu',    # John Hopkins University first base, default
-            'spf']   # Sante publique France
+            'spf',   # Sante publique France
+            'opencovid19']
 _whom = _listwhom[0] # default base
 
 _db = coco.DataBase('jhu')
