@@ -1,6 +1,6 @@
 ![CoCoA Logo](/misc/cocoa_640_320.png)
 
-This is the <img src="/misc/UK.png" height="16px" alt="UK flag" /> version of the *Readme*. You can read the <a href="misc/toto.png"><img src="/misc/FR.png" height="16px" alt="FR flag" /> version</a>.
+This is the <img src="/misc/UK.png" height="16px" alt="UK flag" /> version of the *Readme*. You can read the <a href="README.FR.md"><img src="/misc/FR.png" height="16px" alt="FR flag" /> version</a>.
 
 April/Oct 2020
 
