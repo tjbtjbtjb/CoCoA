@@ -321,7 +321,7 @@ class DataBase():
                     yy[0:k] = yy[0:k]*(1-float(val_to_repart)/s)
                 diffout[c, :] = yy
                 sumout[c, :] = np.cumsum(yy)
-        output = kwargs.get('output',None)
+        output = kwargs.get('output','pandas')
         if process_data:
             if process_data == 'Cumul':
                 out = sumout
@@ -358,12 +358,13 @@ class DataBase():
                 temp.append(pd.DataFrame(data))
                 i+=1
             return pd.concat(temp)
-        else:
+        if output == "array":
             if out.shape[0] == 1:
                 return out[0]
             else:
                 return out.T
-
+        else:
+            print("Error check output format, pandas (default) or array ?")
     def coherent_remove_nan(self,df):
         ''' Find all dates where there are a NaN value and remove all row
         according to this date , this is for coherent sum analyse stuff '''
