@@ -19,7 +19,7 @@ Basic usage
     cc.get(where=['Spain','Italy'],which='recovered')
 ** listing available database and which data can be used **
     cc.listwhom()
-    cc.setwhom('JHU')     # return available keywords (aka 'which' data)
+    cc.setwhom('JHU') # return available keywords (aka 'which' data)
     cc.listwhich()   # idem
     cc.listwhat()    # return available time serie type (total,
                      # daily...)
@@ -46,20 +46,23 @@ import json
 
 # --- Needed global private variables ----------------------------------
 _listwhom=['jhu',    # John Hopkins University first base, default
+            'owid', # Our World in Data
             'spf',   # Sante publique France
-            'opencovid19']
+            'opencovid19'] #  see data.gouv.fr
 _whom = _listwhom[0] # default base
+
 
 _db = coco.DataBase('jhu')
 
 _info = coge.GeoInfo() # will be the info (pseudo) private variable
 _reg = coge.GeoRegion()
 
-_listwhat=['Cumul','Diff','cumul',  # first one is default but we must avoid uppercases
+_listwhat=['cumul','diff',  # first one is default but we must avoid uppercases
             'daily',
             'weekly']
 
 # _w = cowo.WorldInfo() # not yet implemented in this cocoa frontend functions
+
 
 # --- Front end functions -000------------------------------------------
 
@@ -110,7 +113,6 @@ def setwhom(base):
 def listwhich(dbname=None):
     """Get which are the available fields for the current or specified
     base. Output is a list of string.
-
     By default, the listwhich()[0] is the default which field in other
     functions.
     """
@@ -171,6 +173,8 @@ def get(**kwargs):
     if not where:
         raise CocoaKeyError('No where keyword given')
 
+    if whom:
+        _db = coco.DataBase(whom)    
     if not whom:
         whom=_whom
     elif whom not in listwhom():
@@ -185,12 +189,14 @@ def get(**kwargs):
         raise CocoaKeyError('What option '+what+' not supported'
                             'See listwhat() for list.')
 
+    print("-W _db" , _db.get_db())
     if not which:
         which=listwhich()[0]
-    elif which not in listwhich():
+    elif which not in setwhom(whom):
         raise CocoaKeyError('Which option '+which+' not supported. '
                             'See listwhich() for list.')
     return _db.get_stats(which=which,type=what,location=where,output=output)
+
 
 # ----------------------------------------------------------------------
 # --- plot(**kwargs) ---------------------------------------------------
@@ -289,7 +295,7 @@ def map(**kwargs):
     See help(hist).
     """
     wlist=copy(kwargs.get('where',None))
-    p=get(**kwargs,output='pandas')
+    p=get(**kwargs)
 
     which=kwargs.get('which',None)
 

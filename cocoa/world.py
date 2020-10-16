@@ -34,7 +34,7 @@ class WorldInfo:
             raise CocoaConnectionError('Cannot connect to the database '
                 'worldometers.info. '
                 'Please check your connection or availabilty of the db')
-            
+
         self.__pandasData = pandas.read_html(htmlContent)[
             0][['Country (or dependency)', 'Population (2020)', 'Land Area (Km²)','Density (P/Km²)']]
         self.__pandasData.columns = ['Country', 'Population', 'Area','Density']
@@ -62,7 +62,7 @@ class WorldInfo:
                 newCountry=aCountry
         else:
             newCountry=[aCountry]
-            
+
         output=kwargs.get('output', None)
         for i,c in enumerate(aCountry):
             if output == 'worldometer':
@@ -72,7 +72,7 @@ class WorldInfo:
             else:
                 warnings.warn("Using default name output, better to force the output type.")
                 newCountry[i]=c
-        
+
         return newCountry
 
     def getData(self, **kwargs):
@@ -106,7 +106,7 @@ class WorldInfo:
                    'Timor-Leste', 'Kazakhstan', 'Laos', 'Sri Lanka', 'United Arab Emirates',
                    'Burma','Taiwan*','West Bank and Gaza','Western Sahara']
         return sorted(country)
-        
+
     def getOceaniaCountries(self):
         country = ['Australia','New Zealand','Fiji','Papua New Guinea']
         return sorted(country)
@@ -133,7 +133,7 @@ class WorldInfo:
                    'Chad', 'Comoros', 'Equatorial Guinea', 'Morocco', 'South Africa','Eswatini',
                    'Sao Tome and Principe','South Sudan']
         return sorted(country)
-        
+
     def getWorldCountries(self):
         country=self.getAfricaCountries() \
             + self.getSouthAmericaCountries() \
@@ -175,7 +175,7 @@ class WorldInfo:
         return sorted(department),name
 
     def getGrandEst(self):
-        department = ['08','51','52','54','55','57','67','68','88']
+        department = ['08','10','51','52','54','55','57','67','68','88']
         name = 'Grand Est'
         return sorted(department),name
 
@@ -211,14 +211,19 @@ class WorldInfo:
 
     def getProvenceAlpesCotedAzur(self):
         department = ['04','05','06','13','83','84']
-        name='Provence Alpes Cote d\' Azur'
+        name='Provence Alpes Cote d\'Azur'
+        return sorted(department),name
+
+    def getDOMTOM(self):
+        department = ['971','972','973','974','975','976','977','978','984','986','987','988','989']
+        name='France d\'outre-mer'
         return sorted(department),name
 
     def getAllFranceDepartment(self):
         department = self.getAuvergneRhoneAlpes()[0] + self.getBourgogneFrancheComte()[0] + self.getBretagne()[0] + \
         self.getCentreValdeLoire()[0] + self.getCorse()[0] + self.getGrandEst()[0] + self.getHautsdeFrance()[0] + \
         self.getIleDeFrance()[0] + self.getCalvados()[0] + self.getNouvelleAquitaine()[0] + self.getOccitanie()[0] +\
-        self.getPaysdelaLoire()[0] + self.getProvenceAlpesCotedAzur()[0]
+        self.getPaysdelaLoire()[0] + self.getProvenceAlpesCotedAzur()[0] + self.getDOMTOM()[0]
         #dep , name = department
         return department
 
@@ -227,7 +232,7 @@ class WorldInfo:
         department = [self.getAuvergneRhoneAlpes(),self.getBourgogneFrancheComte(),self.getBretagne() , \
         self.getCentreValdeLoire() , self.getCorse() , self.getGrandEst() ,self.getHautsdeFrance() , \
         self.getIleDeFrance() , self.getCalvados() , self.getNouvelleAquitaine() , self.getOccitanie() ,\
-        self.getPaysdelaLoire() , self.getProvenceAlpesCotedAzur()]
+        self.getPaysdelaLoire() , self.getProvenceAlpesCotedAzur() , self.getDOMTOM()]
         for i in department:
             regions.append(i)
         return regions

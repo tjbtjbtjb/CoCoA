@@ -27,7 +27,7 @@ import pandas as pd
 import sys
 from functools import reduce
 import cocoa.geo as coge
-
+from scipy import stats as sps
 
 class DataBase():
     ''' Parse the chosen database and a return a pandas '''
@@ -38,7 +38,7 @@ class DataBase():
         self.dates = []
         self.dicos_countries = {}
         self.dict_current_days = {}
-        self.dict_sum_days = {}
+        self.dict_cumul_days = {}
         self.dict_diff_days = {}
         self.location_more_info={}
         self.database_columns_not_computed={}
@@ -197,6 +197,7 @@ class DataBase():
         #pandas_db['date'] = pandas_db['date'].dt.strftime("%m/%d/%y")
         pandas_db = pandas_db.sort_values(['location','date'])
         pandas_db = pandas_db.groupby(['location','date']).first()
+
         return pandas_db
 
     def pandas_index_location_date_to_jhu_format(self,mypandas,**kwargs):
@@ -243,14 +244,13 @@ class DataBase():
                 self.dicos_countries[w][d_loca[i]].append(d_data[i])
 
             self.dict_current_days[w] = defaultdict(list)
-            self.dict_sum_days[w] = defaultdict(list)
+            self.dict_cumul_days[w] = defaultdict(list)
             self.dict_diff_days[w] = defaultdict(list)
             for location in self.dicos_countries[w]:
                 res = [sum(i) for i in zip(*self.dicos_countries[w][location])]
                 self.dict_current_days[w][location].append(res)
                 self.dict_current_days[w][location] = self.flat_list(self.dict_current_days[w][location])
-
-                self.dict_sum_days[w][location]  = np.nancumsum(self.dict_current_days[w][location])
+                self.dict_cumul_days[w][location]  = np.nancumsum(self.dict_current_days[w][location])
                 self.dict_diff_days[w][location] = [j-i for i, j in zip(self.dict_current_days[w][location][:-1],self.dict_current_days[w][location][1:])]
                 self.dict_diff_days[w][location].insert(0, 0)
                 self.dict_diff_days[w][location] = np.array(self.dict_diff_days[w][location])
@@ -272,7 +272,7 @@ class DataBase():
         return self.dict_current_days
 
     def get_cumul_days(self):
-        return self.dict_sum_days
+        return self.dict_cumul_days
 
     def get_diff_days(self):
         return self.dict_diff_days
@@ -292,21 +292,20 @@ class DataBase():
             clist = (kwargs['location']).copy()
         if self.db != 'spf' and self.db != 'opencovid19':
             clist=self.geo.to_standard(clist,output='list',interpret_region=True)
-
+        output = kwargs.get('output','pandas')
         process_data = kwargs.get('type', None)
 
-        diffout = np.array(
-            tuple(dict((c, self.get_diff_days()[kwargs['which']][c]) for c in clist).values()))
-        sumout = np.array(tuple(dict(
-            (c, (self.get_cumul_days()[kwargs['which']][c])) for c in clist).values()))
         currentout = np.array(tuple(dict(
             (c, (self.get_current_days()[kwargs['which']][c])) for c in clist).values()))
+        cumulout = np.array(tuple(dict(
+            (c, (self.get_cumul_days()[kwargs['which']][c])) for c in clist).values()))
+        diffout = np.array(tuple(dict(
+            (c, self.get_diff_days()[kwargs['which']][c]) for c in clist).values()))
 
         option = kwargs.get('option', None)
-        ascend = kwargs.get('ascending', True)
         if option == 'nonneg':
             diffout = np.array(diffout, dtype=float)
-            sumout = np.array(sumout, dtype=float)
+            currentout = np.array(currentout, dtype=float)
             for c in range(diffout.shape[0]):
                 yy = np.array(diffout[c, :], dtype=float)
                 for kk in np.where(yy < 0)[0]:
@@ -320,72 +319,99 @@ class DataBase():
                     s = np.sum(yy[0:k])
                     yy[0:k] = yy[0:k]*(1-float(val_to_repart)/s)
                 diffout[c, :] = yy
-                sumout[c, :] = np.cumsum(yy)
-        output = kwargs.get('output','pandas')
-        if process_data:
-            if process_data == 'Cumul':
-                out = sumout
-            elif process_data == 'Diff':
-                out = diffout
-            else:
-                raise TypeError(
-                    "Invalid keyword type argument %s , waiting for Cumul or Diff." % key)
-        else:
-            out = currentout
-
+                currentout[c, :] = np.cumsum(yy)
+                cumulout[c, :] = np.cumsum(np.cumsum(yy))
         datos=[dt.strptime(d, '%m/%d/%y') for d in self.get_dates()]
-        if ascend == False:
-            datos = datos[::-1]
-            if out.shape[0] == 1:
-                out = out[0][::-1]
-                out = np.array(out)
+        i = 0
+        temp=[]
+        for coun in clist:
+            if len(currentout[i]):
+                val1,val2,val3 = currentout[i], cumulout[i], diffout[i]
             else:
-                out = out[::-1]
+                val1 = val2 = val3 = [np.nan]*len(datos)
+            data = {
+                'location':[coun]*len(datos),
+                'date': datos,
+                kwargs['which']:val1,
+                'cumul':val2,
+                'diff': val3
+                }
 
-        if output == "pandas":
-            i = 0
-            temp=[]
-            for coun in clist:
-                if len(out[i]):
-                    val = out[i]
-                else:
-                    val = [np.nan]*len(datos)
-                data = {
-                    'location':[coun]*len(datos),
-                    'date': datos,
-                    kwargs['which']:val
-                    }
-                temp.append(pd.DataFrame(data))
-                i+=1
-            return pd.concat(temp)
+            temp.append(pd.DataFrame(data))
+            i+=1
+
         if output == "array":
+            if process_data == 'cumul':
+                out = cumulout
+            elif process_data == 'diff':
+	            out = diffout
+            else:
+                out =  currentout
             if out.shape[0] == 1:
                 return out[0]
             else:
                 return out.T
-        else:
-            print("Error check output format, pandas (default) or array ?")
-    def coherent_remove_nan(self,df):
-        ''' Find all dates where there are a NaN value and remove all row
-        according to this date , this is for coherent sum analyse stuff '''
-        which=df.columns[-1]
-        index = df[df[which].apply(np.isnan)]
-        if index.empty == False:
-            to_remove=(index['date'].values)
-            df = df.loc[~df['date'].isin(to_remove)]
-        return df
 
-    def cumul_over_several_days(self,df,nb_days):
-        ''' return a cumulative pandas sum over nb_days
-            add a new column to the pandas selected : sum + nb_days + D '''
-        df=self.coherent_remove_nan(df)
-        which=df.columns[-1]
-        if 'location' in df.columns:
-            df = df.sort_values(['location','date']).set_index('date')
-            df['Sum'+str(nb_days)+'D'] = df.groupby('location')[which].rolling(window=nb_days, freq='D').sum().values
-        else:
-            df['Sum'+str(nb_days)+'D'] = df.rolling(str(nb_days)+'D', on='date').sum().iloc[:,-1]
+        if len(clist) == 1 :
+            temp[0] = temp[0].drop(columns=['location'])
 
-        df = df[::-1]
-        df=df.reset_index()
-        return df
+        return pd.concat(temp)
+
+    ## https://www.kaggle.com/freealf/estimation-of-rt-from-cases
+    def smooth_cases(self,cases):
+        new_cases = cases
+
+        smoothed = new_cases.rolling(7,
+            win_type='gaussian',
+            min_periods=1,
+            center=True).mean(std=2).round()
+            #center=False).mean(std=2).round()
+
+        zeros = smoothed.index[smoothed.eq(0)]
+        if len(zeros) == 0:
+            idx_start = 0
+        else:
+            last_zero = zeros.max()
+            idx_start = smoothed.index.get_loc(last_zero) + 1
+        smoothed = smoothed.iloc[idx_start:]
+        original = new_cases.loc[smoothed.index]
+
+        return smoothed
+
+
+    def get_posteriors(self,sr, window=7, min_periods=1):
+        # We create an array for every possible value of Rt
+        R_T_MAX = 12
+        r_t_range = np.linspace(0, R_T_MAX, R_T_MAX*100+1)
+
+        # Gamma is 1/serial interval
+        # https://wwwnc.cdc.gov/eid/article/26/6/20-0357_article
+        GAMMA = 1/7
+
+        lam = sr[:-1].values * np.exp(GAMMA * (r_t_range[:, None] - 1))
+
+        # Note: if you want to have a Uniform prior you can use the following line instead.
+        # I chose the gamma distribution because of our prior knowledge of the likely value
+        # of R_t.
+
+        # prior0 = np.full(len(r_t_range), np.log(1/len(r_t_range)))
+        prior0 = np.log(sps.gamma(a=3).pdf(r_t_range) + 1e-14)
+
+        likelihoods = pd.DataFrame(
+            # Short-hand way of concatenating the prior and likelihoods
+            data = np.c_[prior0, sps.poisson.logpmf(sr[1:].values, lam)],
+            index = r_t_range,
+            columns = sr.index)
+
+        # Perform a rolling sum of log likelihoods. This is the equivalent
+        # of multiplying the original distributions. Exponentiate to move
+        # out of log.
+        posteriors = likelihoods.rolling(window,
+                                     axis=1,
+                                     min_periods=min_periods).sum()
+        posteriors = np.exp(posteriors)
+
+        # Normalize to 1.0
+        posteriors = posteriors.div(posteriors.sum(axis=0), axis=1)
+
+        return posteriors
