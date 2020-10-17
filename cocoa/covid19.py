@@ -230,30 +230,27 @@ class DataBase():
     def fill_cocoa_field(self):
         ''' Fill CoCoA variables with database data '''
         df = self.get_rawdata()
-        for w in self.get_available_keys_words():
-            self.dicos_countries[w] = defaultdict(list)
-            #for index, row in df[w].iterrows():iterows to slow
-            dict_copy = df[w].to_dict('split')
-            d_loca = dict_copy['index']
-            d_date = dict_copy['columns']
-            d_data = dict_copy['data']
-            if self.db != 'spf' and self.db != 'opencovid19':
-                d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db(),interpret_region=True)
-            for i in range(len(d_loca)):
-                location=d_loca[i]
-                self.dicos_countries[w][d_loca[i]].append(d_data[i])
+        #self.dicos_countries = defaultdict(list)
+        for keys_words in list(df.keys()):
+                self.dicos_countries[keys_words] = defaultdict(list)
+                self.dict_current_days[keys_words] = defaultdict(list)
+                self.dict_cumul_days[keys_words] = defaultdict(list)
+                self.dict_diff_days[keys_words] = defaultdict(list)
 
-            self.dict_current_days[w] = defaultdict(list)
-            self.dict_cumul_days[w] = defaultdict(list)
-            self.dict_diff_days[w] = defaultdict(list)
-            for location in self.dicos_countries[w]:
-                res = [sum(i) for i in zip(*self.dicos_countries[w][location])]
-                self.dict_current_days[w][location].append(res)
-                self.dict_current_days[w][location] = self.flat_list(self.dict_current_days[w][location])
-                self.dict_cumul_days[w][location]  = np.nancumsum(self.dict_current_days[w][location])
-                self.dict_diff_days[w][location] = [j-i for i, j in zip(self.dict_current_days[w][location][:-1],self.dict_current_days[w][location][1:])]
-                self.dict_diff_days[w][location].insert(0, 0)
-                self.dict_diff_days[w][location] = np.array(self.dict_diff_days[w][location])
+                d_loc  = df[keys_words].to_dict('split')['index']
+                d_date = df[keys_words].to_dict('split')['columns']
+                d_data = df[keys_words].to_dict('split')['data']
+
+                {self.dicos_countries[keys_words][loc].append(data) \
+                            for loc,data in zip(d_loc,d_data)}
+
+                self.dict_current_days[keys_words] = {loc:list(np.sum(data, 0)) for loc,data in \
+                self.dicos_countries[keys_words].items()}
+                self.dict_cumul_days[keys_words] = {loc: np.nancumsum(list(np.sum(data, 0))) for loc,data in \
+                self.dicos_countries[keys_words].items()}
+                self.dict_diff_days[keys_words] = {loc: np.insert(np.diff(list(np.sum(data, 0))),0,0) for loc,data in \
+                self.dicos_countries[keys_words].items()}
+
 
     def set_more_db_info(self,country,val):
         self.location_more_info[country]=val
@@ -327,6 +324,7 @@ class DataBase():
         for coun in clist:
             if len(currentout[i]):
                 val1,val2,val3 = currentout[i], cumulout[i], diffout[i]
+
             else:
                 val1 = val2 = val3 = [np.nan]*len(datos)
             data = {
