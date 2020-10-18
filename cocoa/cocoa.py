@@ -174,12 +174,12 @@ def get(**kwargs):
         raise CocoaKeyError('No where keyword given')
 
     if whom:
-        _db = coco.DataBase(whom)    
+        _db = coco.DataBase(whom)
     if not whom:
         whom=_whom
-    elif whom not in listwhom():
-        raise CocoaKeyError('Whom option '+whom+' not supported'
-                            'See listwhom() for list.')
+    #elif whom not in listwhom():
+    #    raise CocoaKeyError('Whom option '+whom+' not supported'
+    #                        'See listwhom() for list.')
     else:
         warnings.warn('whom keyword not yet implemented. Using default')
 
@@ -192,9 +192,9 @@ def get(**kwargs):
     print("-W _db" , _db.get_db())
     if not which:
         which=listwhich()[0]
-    elif which not in setwhom(whom):
-        raise CocoaKeyError('Which option '+which+' not supported. '
-                            'See listwhich() for list.')
+    #elif which not in setwhom(whom):
+    #    raise CocoaKeyError('Which option '+which+' not supported. '
+    #                        'See listwhich() for list.')
     return _db.get_stats(which=which,type=what,location=where,output=output)
 
 

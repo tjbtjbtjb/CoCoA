@@ -217,6 +217,8 @@ class WorldInfo:
     def getDOMTOM(self):
         department = ['971','972','973','974','975','976','977','978','984','986','987','988','989']
         name='France d\'outre-mer'
+        empty=['984','986','987','988','989']
+        department = [x for x in department if x not in empty]
         return sorted(department),name
 
     def getAllFranceDepartment(self):
