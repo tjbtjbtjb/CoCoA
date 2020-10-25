@@ -179,7 +179,7 @@ class DataBase():
         if encoding:
             encoding = encoding
         pandas_db = pandas.read_csv(self.database_url,sep=separator,dtype=dico_cast, encoding = encoding )
-        print("Read csv finished")
+
         constraints = kwargs.get('constraints', None)
         rename_columns = kwargs.get('rename_columns', None)
         drop_field = kwargs.get('drop_field', None)
@@ -240,11 +240,16 @@ class DataBase():
                 self.dict_cumul_days[keys_words] = defaultdict(list)
                 self.dict_diff_days[keys_words] = defaultdict(list)
 
-                if one_time_enough == False:
+                if self.db != 'jhu' : # needed since not same nb of rows for deaths,recovered and confirmed
+                    if one_time_enough == False:
+                        d_loc  = df[keys_words].to_dict('split')['index']
+                        if self.db != 'spf' and self.db != 'opencovid19' and one_time_enough == False:
+                            d_loc=self.geo.to_standard(list(d_loc),output='list',db=self.get_db(),interpret_region=True)
+                        one_time_enough = True
+                else :
                     d_loc  = df[keys_words].to_dict('split')['index']
-                    if self.db != 'spf' and self.db != 'opencovid19':
+                    if self.db != 'spf' and self.db != 'opencovid19' and one_time_enough == False:
                         d_loc=self.geo.to_standard(list(d_loc),output='list',db=self.get_db(),interpret_region=True)
-                    one_time_enough = True
 
                 d_data = df[keys_words].to_dict('split')['data']
                 {self.dicos_countries[keys_words][loc].append(data) for loc,data in zip(d_loc,d_data)}
@@ -299,10 +304,9 @@ class DataBase():
         output = kwargs.get('output','pandas')
         process_data = kwargs.get('type', None)
 
-        #which=kwargs.get('which',None)
-        #if which not in self.available_keys_words() :
-        #    raise CocoaKeyError(kwargs['which']+' is not a available for' + self.db + 'database name. '
-        #        'See get_available_keys_words() for the full list.')
+        if kwargs['which'] not in self.get_available_keys_words() :
+            raise CocoaKeyError(kwargs['which']+' is not a available for' + self.db + 'database name. '
+            'See get_available_keys_words() for the full list.')
 
         currentout = np.array(tuple(dict(
             (c, (self.get_current_days()[kwargs['which']][c])) for c in clist).values()))
@@ -362,8 +366,8 @@ class DataBase():
             else:
                 return out.T
 
-        if len(clist) == 1 :
-            temp[0] = temp[0].drop(columns=['location'])
+        #if len(clist) == 1 :
+        #    temp[0] = temp[0].drop(columns=['location'])
 
         return pd.concat(temp)
 
