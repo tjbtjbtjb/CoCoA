@@ -142,14 +142,12 @@ class DataBase():
         Parse and convert Sante Public data structure to JHU one for historical raison
         T	Number of tests performed
         P	Number of positive tests
-        cl_age90	Age class
-
         '''
         self.database_url="https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675"
         pandas_spf2_db = pandas.read_csv(self.database_url,sep = ';')
         pandas_spf2_db=pandas_spf2_db.loc[pandas_spf2_db["cl_age90"]==0]
         pandas_spf2_db = pandas_spf2_db.rename(columns={'dep':'location'}).rename(columns={'jour':'date'}).\
-        rename(columns={'P':'total_cases'}).rename(columns={'T':'total_tests'})
+        rename(columns={'P':'nb_cases'}).rename(columns={'T':'nb_tests'})
         pandas_spf2_db['date'] = pandas.to_datetime(pandas_spf2_db['date'],errors='coerce')
         database_columns_not_computed = ['date','location','cl_age90']
         available_keys_words_pub = [i for i in pandas_spf2_db.columns.values.tolist() if i not in database_columns_not_computed]
@@ -195,7 +193,7 @@ class DataBase():
         # Drop tests_units : Units used by the location to report its testing data
         pandas_owid_db  = pandas_owid_db.drop(columns=['tests_units'])
         self.available_keys_words = ['total_cases', 'new_cases', 'total_deaths','new_deaths', 'total_cases_per_million',
-        'new_cases_per_million', 'total_deaths_per_million','new_deaths_per_million',  'new_tests',
+        'new_cases_per_million', 'total_deaths_per_million','new_deaths_per_million', 'total_tests', 'new_tests',
         'total_tests_per_thousand', 'new_tests_per_thousand', 'new_tests_smoothed', 'new_tests_smoothed_per_thousand','stringency_index']
         self.database_columns_for_index = [i for i in pandas_owid_db.columns.values.tolist() if i not in self.available_keys_words]
         pandas_owid =  {}
@@ -267,9 +265,9 @@ class DataBase():
 
     def get_stats(self, **kwargs):
         if not isinstance(kwargs['location'], list):
-            clist = [kwargs['location']]
+            clist = ([kwargs['location']]).copy()
         else:
-            clist = kwargs['location']
+            clist = (kwargs['location']).copy()
 
         if self.db != 'spf':
             clist=self.geo.to_standard(clist,output='list',interpret_region=True)
@@ -349,9 +347,16 @@ class DataBase():
         return df
 
     def cumul_over_several_days(self,df,nb_days):
-        ''' return a cumulative pandas sum over nb_days'''
+        ''' return a cumulative pandas sum over nb_days
+            add a new column to the pandas selected : sum + nb_days + D
+        '''
         which=df.columns[-1]
         df=self.coherent_remove_nan(df)
-        df = df.groupby('date').agg({which:'sum'})
+        if 'location' in df.columns:
+            df = df.sort_values(['location','date']).set_index('date')
+            df['Sum'+str(nb_days)+'D'] = df.groupby('location')[which].rolling(window=nb_days, freq='D').sum().values
+        else:
+            df = df.sort_values('date',ascending=True).rolling(str(nb_days)+'D', on='date').sum()
+        df = df[::-1]
         df=df.reset_index()
-        return df.sort_values('date',ascending=True).rolling(str(nb_days)+'D', on='date').sum()
+        return df
