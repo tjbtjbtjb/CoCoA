@@ -138,6 +138,9 @@ class GeoManager():
         elif not isinstance(w,list):
             raise CocoaTypeError('Waiting for str, list of str or pandas'
                 'as input of get_standard function member of GeoManager')
+
+        w=[v.title() for v in w] # capitalize first letter of each name
+
         w0=w.copy()
 
         if db:
