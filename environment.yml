@@ -4,6 +4,5 @@ dependencies:
   - scipy
   - pip
   - pycountry
-  - pycountry-convert
   - pip:
     - jupyter-server-proxy
