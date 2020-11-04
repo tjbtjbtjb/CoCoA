@@ -3,5 +3,6 @@ dependencies:
   - pandas
   - scipy
   - pip
+  - pycountry  
   - pip:
     - jupyter-server-proxy
