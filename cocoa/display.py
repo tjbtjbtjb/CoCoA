@@ -100,8 +100,8 @@ class CocoDisplay():
             colors = itertools.cycle(Paired12)
             for i in input_names_data:
                 [standardfig.line(x='date', y=i, source=ColumnDataSource(value),
-                color=next(colors), legend_label=key, line_width=4,
-                name=i) for key,value in dict_filter_data[i].items()]
+                color=next(colors), legend_label=key, line_width=3,
+                name=i,hover_line_color="red",hover_line_width=4) for key,value in dict_filter_data[i].items()]
 
             panel = Panel(child=standardfig , title=axis_type)
             panels.append(panel)
