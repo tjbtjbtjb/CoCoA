@@ -29,6 +29,6 @@ CoCoA est prévu pour fonctionner aussi bien
 
 La documentation complète est disponible au travers [du Wiki](https://github.com/tjbtjbtjb/CoCoA/wiki/FR:Home), en particulier :
 - [Installation](https://github.com/tjbtjbtjb/CoCoA/wiki/FR:Install)
-- [Utilisation de base](https://github.com/tjbtjbtjb/CoCoA/wiki/FR:Basics)
+- [Utilisation simple](https://github.com/tjbtjbtjb/CoCoA/wiki/FR:Basics)
 - [Utilisation avancée](https://github.com/tjbtjbtjb/CoCoA/wiki/FR:AdvancedUsage)
 - [Gestion des localisation](https://github.com/tjbtjbtjb/CoCoA/wiki/FR:Geo)
