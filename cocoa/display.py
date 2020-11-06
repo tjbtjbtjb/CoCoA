@@ -93,7 +93,7 @@ class CocoDisplay():
         panels = []
         for axis_type in ["linear", "log"]:
             standardfig = figure(plot_width=400, plot_height=300,y_axis_type=axis_type, x_axis_type='datetime',
-            tools=['box_zoom,box_select,crosshair,reset'])
+            tools=['save','box_zoom,box_select,crosshair,reset'])
             if title:
                 standardfig.title.text = title
             standardfig.add_tools(hover_tool)
