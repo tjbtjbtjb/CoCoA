@@ -60,10 +60,10 @@ class CocoDisplay():
 
     def standardfig(self,title=None, axis_type='linear',x_axis_type='datetime'):
          return figure(title=title,plot_width=400, plot_height=300,y_axis_type=axis_type,x_axis_type=x_axis_type,
-         tools=['box_zoom,box_select,crosshair,reset'])
+         tools=['save','box_zoom,box_select,crosshair,reset'])
 
     @staticmethod
-    def cocoa_basic_plot(babepandas, input_names_data = None,title = None):
+    def cocoa_basic_plot(babepandas, input_names_data = None,title = None,width_height = None):
         ''' Simple bokeh plot with label + toolsbox including hover_tool'''
         #self.base_fig = self.standardfig(title=title)
         #standardfig = figure(plot_width=400, plot_height=300,y_axis_type='linear', x_axis_type='datetime',
@@ -92,7 +92,13 @@ class CocoDisplay():
 
         panels = []
         for axis_type in ["linear", "log"]:
-            standardfig = figure(plot_width=400, plot_height=300,y_axis_type=axis_type, x_axis_type='datetime',
+            if width_height:
+                plot_width  = width_height[0]
+                plot_height = width_height[1]
+            else :
+                plot_width  = 400
+                plot_height = 300
+            standardfig = figure(plot_width=plot_width, plot_height=plot_height,y_axis_type=axis_type, x_axis_type='datetime',
             tools=['save','box_zoom,box_select,crosshair,reset'])
             if title:
                 standardfig.title.text = title
