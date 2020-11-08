@@ -81,9 +81,13 @@ class CocoDisplay():
         if 'location' in babepandas.columns:
             tooltips='Location: @location <br> Date: @date{%F} <br>  $name: @$name'
             loc = babepandas['location'].unique()
+            shorten_loc = [ i if len(i)<15 else i.replace('-',' ').split()[0]+'...'+i.replace('-',' ').split()[-1] for i in loc]
             for i in input_names_data:
                 dict_filter_data[i] =  \
                     dict(babepandas.loc[babepandas['location'].isin(loc)].groupby('location').__iter__())
+                for j in range(len(loc)):
+                    dict_filter_data[i][shorten_loc[j]] = dict_filter_data[i].pop(loc[j])
+
         else:
             for i in input_names_data:
                 dict_filter_data[i] = {i:babepandas}
@@ -99,23 +103,30 @@ class CocoDisplay():
                 plot_width  = 400
                 plot_height = 300
             standardfig = figure(plot_width=plot_width, plot_height=plot_height,y_axis_type=axis_type, x_axis_type='datetime',
-            tools=['save','box_zoom,box_select,crosshair,reset'])
+            tools=['save','box_zoom,box_select,crosshair,reset'],toolbar_location="below")
             if title:
                 standardfig.title.text = title
             standardfig.add_tools(hover_tool)
             colors = itertools.cycle(Paired12)
             for i in input_names_data:
-                [standardfig.line(x='date', y=i, source=ColumnDataSource(value),
-                color=next(colors), legend_label=key, line_width=3,
+                p = [standardfig.line(x='date', y=i, source=ColumnDataSource(value),
+                color=next(colors), line_width=3, legend_label=key,
                 name=i,hover_line_color="red",hover_line_width=4) for key,value in dict_filter_data[i].items()]
 
+            #for i in p:
+            #    standardfig.legend.items[p.index(i)].label = 'Tarace '
+            #[print(list(standardfig.legend.items[p.index(i)].label.values())[0]) for i in p]
+
+            standardfig.legend.label_text_font_size = "12px"
             panel = Panel(child=standardfig , title=axis_type)
             panels.append(panel)
-            standardfig.legend.background_fill_alpha = 0.4
-            #self.base_fig.add_layout(Legend(), 'right')
+            standardfig.legend.background_fill_alpha = 0.6
+            #standardfig.legend = Legend(location=(10, 30))
+            #standardfig.add_layout(legend,'right')
+            #
             standardfig.legend.location = "bottom_left"
-            standardfig.legend.title_text_font_style = "bold"
-            standardfig.legend.title_text_font_size = "5px"
+            #standardfig.legend.title_text_font_style = "bold"
+            #standardfig.legend.title_text_font_size = "5px"
         standardfig.xaxis.formatter = DatetimeTickFormatter(
         days=["%d %B %Y"], months=["%d %B %Y"], years=["%d %B %Y"])
         tabs = Tabs(tabs=panels)
