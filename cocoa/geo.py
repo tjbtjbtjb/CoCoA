@@ -219,15 +219,15 @@ class GeoManager():
                 "Korea, South":"KOR",\
                 "Taiwan*":"Taiwan",\
                 "Laos":"LAO",\
-                "West Bank and Gaza":"PSE",\
+                "West Bank And Gaza":"PSE",\
                 "Burma":"Myanmar",\
                 "Iran":"IRN",\
                 "Diamond Princess":"",\
-                "MS Zaandam":""
+                "Ms Zaandam":"",\
                     })  # last two are names of boats
         elif db=='worldometers':
             translation_dict.update({\
-                "DR Congo":"COD",\
+                "Dr Congo":"COD",\
                 "Congo":"COG",\
                 "Iran":"IRN",\
                 "South Korea":"KOR",\
