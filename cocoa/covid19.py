@@ -15,21 +15,17 @@ The parser class gives a simplier access through an already filled dict of data
 
 """
 
-import requests
 import pandas
 from collections import defaultdict
 import numpy as np
 from datetime import datetime as dt
-from datetime import datetime
-import datetime
-from datetime import timedelta
 import pandas as pd
 import sys
-from functools import reduce
 import cocoa.geo as coge
 from cocoa.error import *
 from scipy import stats as sps
 import random
+
 class DataBase():
     ''' Parse the chosen database and a return a pandas '''
     def __init__(self,db_name):
@@ -118,7 +114,7 @@ class DataBase():
                 self.pandas_datase = self.pandas_index_location_date_to_jhu_format(owid,columns_keeped=columns_keeped)
             self.fill_cocoa_field()
             print('Few information concernant the selected database : ', self.get_db())
-            print('Available keys words for: ',self.get_available_keys_words())
+            print('Available which key-words for: ',self.get_available_keys_words())
             if self.get_db() != 'opencovid19':
                 print('Example of location : ',  ', '.join(random.choices(self.get_locations(), k=5)), ' ...')
             else:
