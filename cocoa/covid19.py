@@ -25,23 +25,26 @@ import datetime
 from datetime import timedelta
 import pandas as pd
 import sys
+from functools import reduce
 import cocoa.geo as coge
-
+from cocoa.error import *
+from scipy import stats as sps
+import random
 class DataBase():
     ''' Parse the chosen database and a return a pandas '''
     def __init__(self,db_name):
-        self.database_name=['jhu','spf','owid']
+        self.database_name=['jhu','spf','owid','opencovid19']
         self.pandas_datase = {}
         self.available_keys_words=[]
         self.dates = []
         self.dicos_countries = {}
-        self.dict_sum_data = {}
-        self.total_current_cases = {}
-        self.diff_days = {}
+        self.dict_current_days = {}
+        self.dict_cumul_days = {}
+        self.dict_diff_days = {}
         self.location_more_info={}
         self.database_columns_not_computed={}
         self.db =  db_name
-        if self.db != 'spf':
+        if self.db != 'spf' and self.db != 'opencovid19':
             self.geo = coge.GeoManager('name')
 
         if self.db not in self.database_name:
@@ -52,22 +55,83 @@ class DataBase():
                 self.pandas_datase = self.parse_convert_jhu()
             elif self.db == 'spf':
                 print('SPF aka Sante Publique France database selected ...')
-                full_pandas = {}
-                self.pandas_datase=self.parse_convert_spf()
-                print('... two differents db from SPF will be parsed ...')
-                pandas_spf2 = self.parse_convert_spf2()
-                self.pandas_datase.update(pandas_spf2)
+                print('... tree differents db from SPF will be parsed ...')
+                # https://www.data.gouv.fr/fr/datasets/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/
+                # Parse and convert spf data structure to JHU one for historical raison
+                # hosp Number of people currently hospitalized
+                # rea  Number of people currently in resuscitation or critical care
+                # rad      Total amount of patient that returned home
+                # dc       Total amout of deaths at the hospital
+                # 'sexe' == 0 male + female
+                cast={'dep':'string'}
+                rename={'jour':'date','dep':'location'}
+                constraints={'sexe':0}
+                spf1=self.csv_to_pandas_index_location_date("https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7",
+                              rename_columns=rename,constraints=constraints,cast=cast)
+                # https://www.data.gouv.fr/fr/datasets/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/
+                # incid_hosp	string 	Nombre quotidien de personnes nouvellement hospitalisées
+                # incid_rea	integer	Nombre quotidien de nouvelles admissions en réanimation
+                # incid_dc	integer	Nombre quotidien de personnes nouvellement décédées
+                # incid_rad	integer	Nombre quotidien de nouveaux retours à domicile
+                spf2=self.csv_to_pandas_index_location_date("https://www.data.gouv.fr/fr/datasets/r/6fadff46-9efd-4c53-942a-54aca783c30c",
+                              rename_columns=rename,cast=cast)
+                # https://www.data.gouv.fr/fr/datasets/donnees-relatives-aux-resultats-des-tests-virologiques-covid-19/
+                # T       Number of tests performed
+                # P       Number of positive tests
+                constraints={'cl_age90':0}
+                spf3=self.csv_to_pandas_index_location_date("https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675",
+                              rename_columns=rename,constraints=constraints,cast=cast)
+
+                #https://www.data.gouv.fr/fr/datasets/indicateurs-de-suivi-de-lepidemie-de-covid-19/#_
+                # tension hospitaliere
+                # Vert : taux d’occupation compris entre 0 et 40% ;
+                # Orange : taux d’occupation compris entre 40 et 60% ;
+                # Rouge : taux d'occupation supérieur à 60%.
+                # R0
+                # vert : R0 entre 0 et 1 ;
+                # Orange : R0 entre 1 et 1,5 ;
+                # Rouge : R0 supérieur à 1,5.
+                cast={'departement':'string'}
+                rename={'extract_date':'date','departement':'location'}
+                columns_skipped=['region','libelle_reg','libelle_dep','tx_incid_couleur','R_couleur',\
+                'taux_occupation_sae_couleur','tx_pos_couleur','nb_orange','nb_rouge']
+                spf4=self.csv_to_pandas_index_location_date("https://www.data.gouv.fr/fr/datasets/r/4acad602-d8b1-4516-bc71-7d5574d5f33e",
+                            rename_columns=rename, separator=',', encoding = "ISO-8859-1",cast=cast)
+                result = pd.concat([spf1, spf2,spf3,spf4], axis=1, sort=False)
+                self.pandas_datase = self.pandas_index_location_date_to_jhu_format(result,columns_skipped=columns_skipped)
+            elif self.db == 'opencovid19':
+                print('OPENCOVID19 selected ...')
+                rename={'jour':'date','maille_nom':'location'}
+                constraints={'granularite':'pays'}
+                columns_skipped = ['maille_code','source_nom','source_url','source_archive','source_type']
+                opencovid19 = self.csv_to_pandas_index_location_date('https://raw.githubusercontent.com/opencovid19-fr/data/master/dist/chiffres-cles.csv',
+                           constraints=constraints,rename_columns=rename,separator=',')
+                self.pandas_datase = self.pandas_index_location_date_to_jhu_format(opencovid19,columns_skipped=columns_skipped)
             elif self.db == 'owid':
                 print('OWID aka \"Our World in Data\" database selected ...')
-                self.pandas_datase  = self.parse_convert_owid()
+                columns_keeped = ['total_cases', 'new_cases', 'total_deaths','new_deaths', 'total_cases_per_million',
+                'new_cases_per_million', 'total_deaths_per_million','new_deaths_per_million', 'total_tests', 'new_tests',
+                'total_tests_per_thousand', 'new_tests_per_thousand', 'new_tests_smoothed', 'new_tests_smoothed_per_thousand','stringency_index']
+                drop_field = {'location':['International','World']}
+                owid = self.csv_to_pandas_index_location_date("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv",
+                separator=',',drop_field=drop_field)
+                self.pandas_datase = self.pandas_index_location_date_to_jhu_format(owid,columns_keeped=columns_keeped)
             self.fill_cocoa_field()
-            print('Available keys words are : ',self.get_available_keys_words())
+            print('Few information concernant the selected database : ', self.get_db())
+            print('Available keys words for: ',self.get_available_keys_words())
+            if self.get_db() != 'opencovid19':
+                print('Example of location : ',  ', '.join(random.choices(self.get_locations(), k=5)), ' ...')
+            else:
+                print('Only available location: ', self.get_locations())
+            print('Last date data ', self.get_dates()[-1])
+
 
     def get_db(self):
-       return self.db
+        ''' Return database name '''
+        return self.db
 
-    def available_keys_wordsbase_name(self):
-        ''' Return available database '''
+    def get_available_database(self):
+        ''' Return available COVID database '''
         return self.database_name
 
     def get_available_keys_words(self):
@@ -103,140 +167,107 @@ class DataBase():
         self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
         return pandas_jhu
 
-    def parse_convert_spf(self):
-        ''' French data.gouv : spf hospital data
-        homepage: https://www.data.gouv.fr/fr/datasets/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/
-        Parse and convert spf data structure to JHU one for historical raison
-        hosp	Number of people currently hospitalized
-        rea  Number of people currently in resuscitation or critical care
-        rad	Total amount of patient that returned home
-        dc	Total amout of deaths at the hospital
+    def csv_to_pandas_index_location_date(self,url,**kwargs):
         '''
-        self.database_url="https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7"
-        pandas_spf_db = pandas.read_csv(self.database_url,sep = ';')
-
-        pandas_spf_db = pandas_spf_db.loc[pandas_spf_db['sexe'] == 0].rename(columns={'dep':'location'})\
-        .rename(columns={'jour':'date'}).rename(columns={'rea':'resuscitation'}).rename(columns={'rad':'recovered'}).\
-            rename(columns={'dc':'deaths'})
-        pandas_spf_db['date'] = pandas.to_datetime(pandas_spf_db['date'],errors='coerce')
-        self.spf_date_min , self.spf_date_max = 0, 0
-        self.spf_date_min,self.spf_date_max = min(pandas_spf_db['date']),max(pandas_spf_db['date'])
-        database_columns_not_computed=['date','location','sexe']
-        self.available_keys_words = [i for i in pandas_spf_db.columns.values.tolist() if i not in database_columns_not_computed]
-        pandas_spf={}
-        for w in self.available_keys_words:
-            pandas_temp   = pandas_spf_db[['location','date',w]]
-            pandas_temp=pandas_temp.groupby(['location','date']).sum()
-            pandas_temp.reset_index(inplace=True)
-            pandas_temp   = pandas_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
-            pandas_temp   = pandas_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
-            pandas_spf[w] = pandas_temp
-            self.dates    = pandas.to_datetime(pandas_spf[w].columns,errors='coerce')
-        self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
-        return pandas_spf
-
-
-    def parse_convert_spf2(self):
-        ''' French data.gouv : Sante Public
-        homepage: https://www.data.gouv.fr/fr/datasets/donnees-relatives-aux-resultats-des-tests-virologiques-covid-19/
-        Parse and convert Sante Public data structure to JHU one for historical raison
-        T	Number of tests performed
-        P	Number of positive tests
+        Parse and convert CSV file to a pandas with location+date as an index
         '''
-        self.database_url="https://www.data.gouv.fr/fr/datasets/r/406c6a23-e283-4300-9484-54e78c8ae675"
-        pandas_spf2_db = pandas.read_csv(self.database_url,sep = ';')
-        pandas_spf2_db=pandas_spf2_db.loc[pandas_spf2_db["cl_age90"]==0]
-        pandas_spf2_db = pandas_spf2_db.rename(columns={'dep':'location'}).rename(columns={'jour':'date'}).\
-        rename(columns={'P':'nb_cases'}).rename(columns={'T':'nb_tests'})
-        pandas_spf2_db['date'] = pandas.to_datetime(pandas_spf2_db['date'],errors='coerce')
-        database_columns_not_computed = ['date','location','cl_age90']
-        available_keys_words_pub = [i for i in pandas_spf2_db.columns.values.tolist() if i not in database_columns_not_computed]
-        if min(pandas_spf2_db['date']) < self.spf_date_min or max(pandas_spf2_db['date']) > self.spf_date_max:
-            print("Check the spf and SantePublique dates ! You shouln't be here ...")
-            exit()
-        delta_min = min(pandas_spf2_db['date']) -  self.spf_date_min
-        delta_max = self.spf_date_max - max(pandas_spf2_db['date'])
-        cp_pandas_spf2 = pandas_spf2_db.copy()
-        cp_pandas_spf2['date'] = cp_pandas_spf2['date'].dt.strftime("%m/%d/%y")
-        cp_pandas_spf2 = (cp_pandas_spf2.groupby(['location','date']).sum())
-        cp_pandas_spf2.reset_index(inplace=True)
-        pandas_spf2={}
+        self.database_url=url
+        cast = kwargs.get('cast', None)
+        dico_cast = {}
+        if cast:
+            for key,val in cast.items():
+                dico_cast[key] = val
+        separator = kwargs.get('separator', ';')
+        if separator:
+            separator = separator
+        encoding = kwargs.get('encoding', None)
+        if encoding:
+            encoding = encoding
+        pandas_db = pandas.read_csv(self.database_url,sep=separator,dtype=dico_cast, encoding = encoding )
+
+        constraints = kwargs.get('constraints', None)
+        rename_columns = kwargs.get('rename_columns', None)
+        drop_field = kwargs.get('drop_field', None)
+        if constraints:
+            for key,val in constraints.items():
+                pandas_db = pandas_db.loc[pandas_db[key] == val]
+                pandas_db = pandas_db.drop(columns=key)
+        if drop_field:
+            for key,val in drop_field.items():
+                for i in val:
+                    pandas_db =  pandas_db[pandas_db[key] != i ]
+        if rename_columns:
+            for key,val in rename_columns.items():
+                pandas_db = pandas_db.rename(columns={key:val})
+        pandas_db['date'] = pandas.to_datetime(pandas_db['date'],errors='coerce')
+        #pandas_db['date'] = pandas_db['date'].dt.strftime("%m/%d/%y")
+        pandas_db = pandas_db.sort_values(['location','date'])
+        pandas_db = pandas_db.groupby(['location','date']).first()
+
+        return pandas_db
+
+    def pandas_index_location_date_to_jhu_format(self,mypandas,**kwargs):
+        '''
+        Return a pandas in CoCoa Structure
+        '''
+        columns_skipped = kwargs.get('columns_skipped', None)
+        columns_keeped  = kwargs.get('columns_keeped', None)
+        database_columns_not_computed = ['date','location']
+        available_keys_words_pub = [i for i in mypandas.columns.values.tolist() if i not in database_columns_not_computed]
+        if columns_skipped:
+            for col in columns_skipped:
+                database_columns_not_computed.append(col)
+            available_keys_words_pub = [i for i in mypandas.columns.values.tolist() if i not in database_columns_not_computed]
+        if columns_keeped:
+           available_keys_words_pub = columns_keeped
+        self.available_keys_words = available_keys_words_pub
+        mypandas.reset_index(inplace=True)
+        pandas_dico = {}
         for w in available_keys_words_pub:
-            pandas_temp   = cp_pandas_spf2[['location','date',w]]
+            pandas_temp   = mypandas[['location','date',w]]
             pandas_temp.reset_index(inplace=True)
             pandas_temp   = pandas_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
-            a= np.nan*pandas_temp.shape[0]
-            for i in range(delta_min.days):
-                days=self.spf_date_min + timedelta(days=i)
-                pandas_temp.insert(loc=0+i,column=days.strftime("%m/%d/%y"),value=a)
-                last_column=len(pandas_temp.columns)
-            for i in range(0,delta_max.days):
-                days=max(pandas_spf2_db['date']) + timedelta(days=i+1)
-                pandas_temp.insert(loc=last_column+i,column=days.strftime("%m/%d/%y"),value=a)
-            pandas_spf2[w] = pandas_temp
-            self.dates    = pandas.to_datetime(pandas_spf2[w].columns,errors='coerce')
-            self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
-        self.available_keys_words += available_keys_words_pub
-        return pandas_spf2
-
-
-    def parse_convert_owid(self):
-        ''' Our World in Data
-        homepage: https://ourworldindata.org/coronavirus
-        Parse and convert OWID aka \"Our World in Data\"  to JHU one for historical raison
-        https://github.com/owid/covid-19-data/blob/master/public/data/owid-covid-data-codebook.md '''
-        self.pandas_datase = {}
-        self.database_url="https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv"
-        pandas_owid_db   = pandas.read_csv(self.database_url,sep = ',')
-        pandas_owid_db   = pandas_owid_db.sort_values(by=['location','date'])
-        pandas_owid_db['date'] = pd.to_datetime(pandas_owid_db['date'],errors='coerce')
-        # Drop tests_units : Units used by the location to report its testing data
-        pandas_owid_db  = pandas_owid_db.drop(columns=['tests_units'])
-        self.available_keys_words = ['total_cases', 'new_cases', 'total_deaths','new_deaths', 'total_cases_per_million',
-        'new_cases_per_million', 'total_deaths_per_million','new_deaths_per_million', 'total_tests', 'new_tests',
-        'total_tests_per_thousand', 'new_tests_per_thousand', 'new_tests_smoothed', 'new_tests_smoothed_per_thousand','stringency_index']
-        self.database_columns_for_index = [i for i in pandas_owid_db.columns.values.tolist() if i not in self.available_keys_words]
-        pandas_owid =  {}
-        pandas_owid_db = pandas_owid_db[pandas_owid_db['location'] != 'International' ]
-        pandas_owid_db = pandas_owid_db[pandas_owid_db['location'] != 'World' ]
-
-        for w in self.get_available_keys_words():
-            pandas_owid_temp = pandas_owid_db[['location','date',w]]
-            pandas_owid_temp = pandas_owid_temp.set_index('location')
-            pandas_owid_temp = pandas_owid_temp.pivot_table(index='location',values=w,columns='date',dropna=False)
-            pandas_owid_temp = pandas_owid_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
-            pandas_owid[w] = pandas_owid_temp
-            self.dates    = pandas.to_datetime(pandas_owid[w] .columns,errors='coerce')
-        self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
-        return pandas_owid
+            #pandas_temp   = pandas_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
+            pandas_dico[w] = pandas_temp
+            self.dates    = pandas.to_datetime(pandas_dico[w].columns,errors='coerce')
+            self.dates    = [i.strftime('%-m/%-d/%y') for i in self.dates]
+        return pandas_dico
 
     def fill_cocoa_field(self):
         ''' Fill CoCoA variables with database data '''
         df = self.get_rawdata()
-        for w in self.get_available_keys_words():
-            self.dicos_countries[w] = defaultdict(list)
-            #for index, row in df[w].iterrows():iterows to slow
-            dict_copy = df[w].to_dict('split')
-            d_loca = dict_copy['index']
-            d_date = dict_copy['columns']
-            d_data = dict_copy['data']
-            if self.db != 'spf':
-                d_loca=self.geo.to_standard(list(d_loca),output='list',db=self.get_db(),interpret_region=True)
-            for i in range(len(d_loca)):
-                location=d_loca[i]
-                temp=[]
-                val=d_data[i]
-                self.dicos_countries[w][d_loca[i]].append(d_data[i])
-            self.dict_sum_data[w] = defaultdict(list)
-            self.total_current_cases[w] = defaultdict(list)
-            self.diff_days[w] = defaultdict(list)
-            for location in self.dicos_countries[w]:
-                res = [sum(i) for i in zip(*self.dicos_countries[w][location])]
-                self.dict_sum_data[w][location].append(res)
-                self.dict_sum_data[w][location] = self.flat_list(self.dict_sum_data[w][location])
-                self.diff_days[w][location] = [j-i for i, j in zip(self.dict_sum_data[w][location][:-1],self.dict_sum_data[w][location][1:])]
-                self.diff_days[w][location].insert(0, 0)
-                self.diff_days[w][location] = np.array(self.diff_days[w][location])
+        #self.dicos_countries = defaultdict(list)
+
+        one_time_enough = False
+        for keys_words in self.available_keys_words:
+                self.dicos_countries[keys_words] = defaultdict(list)
+                self.dict_current_days[keys_words] = defaultdict(list)
+                self.dict_cumul_days[keys_words] = defaultdict(list)
+                self.dict_diff_days[keys_words] = defaultdict(list)
+
+                if self.db != 'jhu' : # needed since not same nb of rows for deaths,recovered and confirmed
+                    if one_time_enough == False:
+                        d_loc  = df[keys_words].to_dict('split')['index']
+                        if self.db != 'spf' and self.db != 'opencovid19' and one_time_enough == False:
+                            d_loc=self.geo.to_standard(list(d_loc),output='list',db=self.get_db(),interpret_region=True)
+                        one_time_enough = True
+                else :
+                    d_loc  = df[keys_words].to_dict('split')['index']
+                    if self.db != 'spf' and self.db != 'opencovid19' and one_time_enough == False:
+                        d_loc=self.geo.to_standard(list(d_loc),output='list',db=self.get_db(),interpret_region=True)
+
+                d_data = df[keys_words].to_dict('split')['data']
+                {self.dicos_countries[keys_words][loc].append(data) for loc,data in zip(d_loc,d_data)}
+
+                self.dict_current_days[keys_words] = {loc:list(np.sum(data, 0)) for loc,data in \
+                self.dicos_countries[keys_words].items()}
+
+                self.dict_cumul_days[keys_words] = {loc: np.nancumsum(data) for loc,data in \
+                self.dict_current_days[keys_words].items()}
+
+                self.dict_diff_days[keys_words] = {loc: np.insert(np.diff(data),0,0) for loc,data in \
+                self.dict_current_days[keys_words].items()}
+
 
     def set_more_db_info(self,country,val):
         self.location_more_info[country]=val
@@ -251,16 +282,21 @@ class DataBase():
                 flatten_matrix.append(val)
         return flatten_matrix
 
+    def get_current_days(self):
+        return self.dict_current_days
+
     def get_cumul_days(self):
-        return self.dict_sum_data
+        return self.dict_cumul_days
 
     def get_diff_days(self):
-        return self.diff_days
+        return self.dict_diff_days
 
     def get_dates(self):
+        ''' Return all dates available in the current database'''
         return self.dates
 
     def get_locations(self):
+        ''' Return available location countries / regions in the current database '''
         return np.array(tuple(self.get_diff_days()[self.available_keys_words[0]].keys()))
 
     def get_stats(self, **kwargs):
@@ -268,20 +304,26 @@ class DataBase():
             clist = ([kwargs['location']]).copy()
         else:
             clist = (kwargs['location']).copy()
-
-        if self.db != 'spf':
+        if self.db != 'spf' and self.db != 'opencovid19':
             clist=self.geo.to_standard(clist,output='list',interpret_region=True)
+        output = kwargs.get('output','pandas')
+        process_data = kwargs.get('type', None)
 
-        diffout = np.array(
-            tuple(dict((c, self.get_diff_days()[kwargs['which']][c]) for c in clist).values()))
-        sumout = np.array(tuple(dict(
+        if kwargs['which'] not in self.get_available_keys_words() :
+            raise CocoaKeyError(kwargs['which']+' is not a available for' + self.db + 'database name. '
+            'See get_available_keys_words() for the full list.')
+
+        currentout = np.array(tuple(dict(
+            (c, (self.get_current_days()[kwargs['which']][c])) for c in clist).values()))
+        cumulout = np.array(tuple(dict(
             (c, (self.get_cumul_days()[kwargs['which']][c])) for c in clist).values()))
+        diffout = np.array(tuple(dict(
+            (c, self.get_diff_days()[kwargs['which']][c]) for c in clist).values()))
 
         option = kwargs.get('option', None)
-        ascend = kwargs.get('ascending', True)
         if option == 'nonneg':
             diffout = np.array(diffout, dtype=float)
-            sumout = np.array(sumout, dtype=float)
+            currentout = np.array(currentout, dtype=float)
             for c in range(diffout.shape[0]):
                 yy = np.array(diffout[c, :], dtype=float)
                 for kk in np.where(yy < 0)[0]:
@@ -295,68 +337,100 @@ class DataBase():
                     s = np.sum(yy[0:k])
                     yy[0:k] = yy[0:k]*(1-float(val_to_repart)/s)
                 diffout[c, :] = yy
-                sumout[c, :] = np.cumsum(yy)
-        output = kwargs.get('output',None)
-        if kwargs['type'] == 'Cumul':
-            out = sumout
-        elif kwargs['type'] == 'Diff':
-            out = diffout
-        else:
-            raise TypeError(
-                "Invalid keyword type argument %s , waiting for Cumul or Diff." % key)
-
+                currentout[c, :] = np.cumsum(yy)
+                cumulout[c, :] = np.cumsum(np.cumsum(yy))
         datos=[dt.strptime(d, '%m/%d/%y') for d in self.get_dates()]
-        if ascend == False:
-            datos = datos[::-1]
-            if out.shape[0] == 1:
-                out = out[0][::-1]
-                out = np.array(out)
-            else:
-                out = out[::-1]
+        i = 0
+        temp=[]
+        for coun in clist:
+            if len(currentout[i]):
+                val1,val2,val3 = currentout[i], cumulout[i], diffout[i]
 
-        if output == "pandas":
-            i = 0
-            temp=[]
-            for coun in clist:
-                if len(out[i]):
-                    val = out[i]
-                else:
-                    val = [np.nan]*len(datos)
-                data = {
-                    'location':[coun]*len(datos),
-                    'date': datos,
-                    kwargs['which']:val
-                    }
-                temp.append(pd.DataFrame(data))
-                i+=1
-            return pd.concat(temp)
-        else:
+            else:
+                val1 = val2 = val3 = [np.nan]*len(datos)
+            data = {
+                'location':[coun]*len(datos),
+                'date': datos,
+                kwargs['which']:val1,
+                'cumul':val2,
+                'diff': val3
+                }
+
+            temp.append(pd.DataFrame(data))
+            i+=1
+
+        if output == "array":
+            if process_data == 'cumul':
+                out = cumulout
+            elif process_data == 'diff':
+	            out = diffout
+            else:
+                out =  currentout
             if out.shape[0] == 1:
                 return out[0]
             else:
                 return out.T
 
-    def coherent_remove_nan(self,df):
-        ''' Find all dates where there are a NaN value and remove all row
-        according to this date , this is for coherent sum analyse stuff '''
-        which=df.columns[-1]
-        index = df[df[which].apply(np.isnan)]
-        if index.empty == False:
-            to_remove=(index['date'].values)
-            df = df.loc[~df['date'].isin(to_remove)]
-        return df
+        #if len(clist) == 1 :
+        #    temp[0] = temp[0].drop(columns=['location'])
 
-    def cumul_over_several_days(self,df,nb_days):
-        ''' return a cumulative pandas sum over nb_days
-            add a new column to the pandas selected : sum + nb_days + D
-        '''
-        which=df.columns[-1]
-        df=self.coherent_remove_nan(df)
-        if 'location' in df.columns:
-            df = df.sort_values(['location','date']).set_index('date')
-            df['Sum'+str(nb_days)+'D'] = df.groupby('location')[which].rolling(window=nb_days, freq='D').sum().values
+        return pd.concat(temp)
+
+    ## https://www.kaggle.com/freealf/estimation-of-rt-from-cases
+    def smooth_cases(self,cases):
+        new_cases = cases
+
+        smoothed = new_cases.rolling(7,
+            win_type='gaussian',
+            min_periods=1,
+            center=True).mean(std=2).round()
+            #center=False).mean(std=2).round()
+
+        zeros = smoothed.index[smoothed.eq(0)]
+        if len(zeros) == 0:
+            idx_start = 0
         else:
-            df = df.sort_values('date',ascending=True).rolling(str(nb_days)+'D', on='date').sum()
-        df = df[::-1]
-        df=df.reset_index()
-        return df
+            last_zero = zeros.max()
+            idx_start = smoothed.index.get_loc(last_zero) + 1
+        smoothed = smoothed.iloc[idx_start:]
+        original = new_cases.loc[smoothed.index]
+
+        return smoothed
+
+
+    def get_posteriors(self,sr, window=7, min_periods=1):
+        # We create an array for every possible value of Rt
+        R_T_MAX = 12
+        r_t_range = np.linspace(0, R_T_MAX, R_T_MAX*100+1)
+
+        # Gamma is 1/serial interval
+        # https://wwwnc.cdc.gov/eid/article/26/6/20-0357_article
+        GAMMA = 1/7
+
+        lam = sr[:-1].values * np.exp(GAMMA * (r_t_range[:, None] - 1))
+
+        # Note: if you want to have a Uniform prior you can use the following line instead.
+        # I chose the gamma distribution because of our prior knowledge of the likely value
+        # of R_t.
+
+        # prior0 = np.full(len(r_t_range), np.log(1/len(r_t_range)))
+        prior0 = np.log(sps.gamma(a=3).pdf(r_t_range) + 1e-14)
+
+        likelihoods = pd.DataFrame(
+            # Short-hand way of concatenating the prior and likelihoods
+            data = np.c_[prior0, sps.poisson.logpmf(sr[1:].values, lam)],
+            index = r_t_range,
+            columns = sr.index)
+
+        # Perform a rolling sum of log likelihoods. This is the equivalent
+        # of multiplying the original distributions. Exponentiate to move
+        # out of log.
+        posteriors = likelihoods.rolling(window,
+                                     axis=1,
+                                     min_periods=min_periods).sum()
+        posteriors = np.exp(posteriors)
+
+        # Normalize to 1.0
+        posteriors = posteriors.div(posteriors.sum(axis=0), axis=1)
+
+        return posteriors
