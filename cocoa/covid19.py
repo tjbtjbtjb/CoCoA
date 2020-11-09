@@ -304,8 +304,10 @@ class DataBase():
             clist = ([kwargs['location']]).copy()
         else:
             clist = (kwargs['location']).copy()
+
         if self.db != 'spf' and self.db != 'opencovid19':
             clist=self.geo.to_standard(clist,output='list',interpret_region=True)
+
         output = kwargs.get('output','pandas')
         process_data = kwargs.get('type', None)
 
@@ -313,6 +315,8 @@ class DataBase():
             raise CocoaKeyError(kwargs['which']+' is not a available for' + self.db + 'database name. '
             'See get_available_keys_words() for the full list.')
 
+        diff_locations = list(set(clist) - set(self.get_locations()))
+        clist = [i for i in clist if i not in diff_locations]
         currentout = np.array(tuple(dict(
             (c, (self.get_current_days()[kwargs['which']][c])) for c in clist).values()))
         cumulout = np.array(tuple(dict(
