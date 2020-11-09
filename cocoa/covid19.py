@@ -29,7 +29,7 @@ from functools import reduce
 import cocoa.geo as coge
 from cocoa.error import *
 from scipy import stats as sps
-
+import random
 class DataBase():
     ''' Parse the chosen database and a return a pandas '''
     def __init__(self,db_name):
@@ -117,7 +117,12 @@ class DataBase():
                 separator=',',drop_field=drop_field)
                 self.pandas_datase = self.pandas_index_location_date_to_jhu_format(owid,columns_keeped=columns_keeped)
             self.fill_cocoa_field()
-            print('Available keys words for ', self.get_db(), ' are : ',self.get_available_keys_words())
+            print('Few information concernant the selected database : ', self.get_db())
+            print('Available keys words for: ',self.get_available_keys_words())
+            if self.get_db() != 'opencovid19':
+                print('Example of location : ',  ', '.join(random.choices(self.get_locations(), k=5)), ' ...')
+            else:
+                print('Only available location: ', self.get_locations())
             print('Last date data ', self.get_dates()[-1])
 
 
@@ -232,7 +237,7 @@ class DataBase():
         ''' Fill CoCoA variables with database data '''
         df = self.get_rawdata()
         #self.dicos_countries = defaultdict(list)
-        print('fill_cocoa_field started')
+
         one_time_enough = False
         for keys_words in self.available_keys_words:
                 self.dicos_countries[keys_words] = defaultdict(list)
@@ -299,8 +304,10 @@ class DataBase():
             clist = ([kwargs['location']]).copy()
         else:
             clist = (kwargs['location']).copy()
+
         if self.db != 'spf' and self.db != 'opencovid19':
             clist=self.geo.to_standard(clist,output='list',interpret_region=True)
+
         output = kwargs.get('output','pandas')
         process_data = kwargs.get('type', None)
 
@@ -308,6 +315,8 @@ class DataBase():
             raise CocoaKeyError(kwargs['which']+' is not a available for' + self.db + 'database name. '
             'See get_available_keys_words() for the full list.')
 
+        diff_locations = list(set(clist) - set(self.get_locations()))
+        clist = [i for i in clist if i not in diff_locations]
         currentout = np.array(tuple(dict(
             (c, (self.get_current_days()[kwargs['which']][c])) for c in clist).values()))
         cumulout = np.array(tuple(dict(
