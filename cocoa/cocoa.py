@@ -33,18 +33,16 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import geopandas as gpd
 
-import cocoa.world as cowo
 import cocoa.covid19 as coco
 import cocoa.geo as coge
 from cocoa.error import *
 import cocoa.display as cd
 
-from bokeh.io import show, output_notebook
-from bokeh.io import output_notebook, show, output_file
+from bokeh.io import show, output_notebook, output_file
 output_notebook(hide_banner=True)
 
 from bokeh.plotting import figure
-from bokeh.models import GeoJSONDataSource, LinearColorMapper,LogColorMapper, ColorBar, HoverTool,LogTicker
+from bokeh.models import GeoJSONDataSource, LinearColorMapper, ColorBar, HoverTool
 from bokeh.palettes import brewer
 import json
 
@@ -130,17 +128,6 @@ def listwhich(dbname=None):
             'See cocoa.listwhom() for the full list.')
     return _db.get_available_keys_words()
 
-# ----------------------------------------------------------------------
-# --- listwhat() -------------------------------------------------------
-# ----------------------------------------------------------------------
-
-def listwhat():
-    """Get what sort of time series data are available.
-
-    By default, the listwhat()[0] is the default what field in other
-    functions.
-    """
-    return _listwhat
 
 # ----------------------------------------------------------------------
 # --- get(**kwargs) ----------------------------------------------------
