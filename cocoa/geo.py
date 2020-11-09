@@ -155,7 +155,6 @@ class GeoManager():
             elif type(c)!=str:
                 raise CocoaTypeError('Locations should be given as '
                     'strings or integers only')
-
             if (c in self._gr.get_region_list()) and interpret_region == True:
                 w=self._gr.get_countries_from_region(c)+w
             else:
@@ -529,6 +528,8 @@ class GeoRegion():
         The standard used is iso2. To convert to another standard,
         use the GeoManager class.
         """
+        region=region.title()  # if not properly capitalized
+        
         if region not in self.get_region_list():
             raise CocoaKeyError('The given region "'+str(region)+'" is unknown.')
 
