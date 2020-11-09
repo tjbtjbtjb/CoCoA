@@ -289,7 +289,10 @@ def cocoaplot(**kwargs):
 
     which=kwargs.get('which',listwhich()[0])
     
-    fig = cocoplot.cocoa_basic_plot(t,which)
+    title=kwargs.get('title',None)
+    width_height=kwargs.get('width_height',None)
+    
+    fig = cocoplot.cocoa_basic_plot(t,which,title,width_height)
     show(fig)
     
 # ----------------------------------------------------------------------
