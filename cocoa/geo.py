@@ -19,7 +19,6 @@ statistical information for countries.
 GeoRegion class helps returning list of countries in a specified region
 """
 
-from copy import copy
 import warnings
 
 import pycountry as pc
