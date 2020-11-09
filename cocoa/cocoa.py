@@ -19,7 +19,7 @@ Basic usage
     cc.get(where=['Spain','Italy'],which='recovered')
 ** listing available database and which data can be used **
     cc.listwhom()
-    cc.setwhom('JHU')     # return available keywords (aka 'which' data)
+    cc.setwhom('JHU') # return available keywords (aka 'which' data)
     cc.listwhich()   # idem
     cc.listwhat()    # return available time serie type (total,
                      # daily...)
@@ -37,8 +37,12 @@ import cocoa.world as cowo
 import cocoa.covid19 as coco
 import cocoa.geo as coge
 from cocoa.error import *
+import cocoa.display as cd
 
+from bokeh.io import show, output_notebook
 from bokeh.io import output_notebook, show, output_file
+output_notebook(hide_banner=True)
+
 from bokeh.plotting import figure
 from bokeh.models import GeoJSONDataSource, LinearColorMapper,LogColorMapper, ColorBar, HoverTool,LogTicker
 from bokeh.palettes import brewer
@@ -46,19 +50,25 @@ import json
 
 # --- Needed global private variables ----------------------------------
 _listwhom=['jhu',    # John Hopkins University first base, default
-            'spf']   # Sante publique France
+            'owid', # Our World in Data
+            'spf',   # Sante publique France
+            'opencovid19'] #  see data.gouv.fr
 _whom = _listwhom[0] # default base
 
+
 _db = coco.DataBase('jhu')
+cocoplot = cd.CocoDisplay()
 
 _info = coge.GeoInfo() # will be the info (pseudo) private variable
 _reg = coge.GeoRegion()
 
-_listwhat=['Cumul','Diff','cumul',  # first one is default but we must avoid uppercases
+_listwhat=['cumul','diff',  # first one is default but we must avoid uppercases
             'daily',
             'weekly']
 
+
 # _w = cowo.WorldInfo() # not yet implemented in this cocoa frontend functions
+
 
 # --- Front end functions -000------------------------------------------
 
@@ -109,7 +119,6 @@ def setwhom(base):
 def listwhich(dbname=None):
     """Get which are the available fields for the current or specified
     base. Output is a list of string.
-
     By default, the listwhich()[0] is the default which field in other
     functions.
     """
@@ -160,6 +169,7 @@ def get(**kwargs):
 
     output --   output format returned ( list (default), dict or pandas)
     """
+    global _db
     where=kwargs.get('where',None)
     what=kwargs.get('what',None)
     which=kwargs.get('which',None)
@@ -170,11 +180,13 @@ def get(**kwargs):
     if not where:
         raise CocoaKeyError('No where keyword given')
 
+    if whom:
+        _db = coco.DataBase(whom)
     if not whom:
         whom=_whom
-    elif whom not in listwhom():
-        raise CocoaKeyError('Whom option '+whom+' not supported'
-                            'See listwhom() for list.')
+    #elif whom not in listwhom():
+    #    raise CocoaKeyError('Whom option '+whom+' not supported'
+    #                        'See listwhom() for list.')
     else:
         warnings.warn('whom keyword not yet implemented. Using default')
 
@@ -186,10 +198,11 @@ def get(**kwargs):
 
     if not which:
         which=listwhich()[0]
-    elif which not in listwhich():
+    elif which not in setwhom(whom):
         raise CocoaKeyError('Which option '+which+' not supported. '
                             'See listwhich() for list.')
-    return _db.get_stats(which=which,type=what,location=where,output=output)
+    return _db.get_stats(which=which,location=where)
+
 
 # ----------------------------------------------------------------------
 # --- plot(**kwargs) ---------------------------------------------------
@@ -241,6 +254,45 @@ def plot(**kwargs):
     plt.show()
 
 # ----------------------------------------------------------------------
+# --- plot(**kwargs) ---------------------------------------------------
+# ----------------------------------------------------------------------
+
+def cocoaplot(**kwargs):
+    """Plot data according to arguments (same as the get function)
+    and options.
+
+    Keyword arguments
+    -----------------
+
+    where (mandatory), what, which, whom : (see help(get))
+
+    yscale --   'lin' (linear) or 'log' (logarithmic) vertical y scale.
+                If log scale is selected null values are hidden.
+
+    input  --   input data to plot within the cocoa framework (e.g.
+                after some analysis or filtering). Default is None which
+                means that we use the basic raw data through the get
+                function.
+                When the 'input' keyword is set, where, what, which,
+                whom keywords are ignored.
+                input should be given as valid cocoa pandas dataframe.
+    """
+
+    input_arg=kwargs.get('input',None)
+    if input_arg != None:
+        if not isinstance(input_arg,pd.DataFrame):
+            raise CocoaTypeError('Waiting input as valid cocoa pandas '
+                'dataframe. See help.')
+        t=input_arg
+    else:
+        t=get(**kwargs,output='pandas')
+
+    which=kwargs.get('which',listwhich()[0])
+    
+    fig = cocoplot.cocoa_basic_plot(t,which)
+    show(fig)
+    
+# ----------------------------------------------------------------------
 # --- hist(**kwargs) ---------------------------------------------------
 # ----------------------------------------------------------------------
 
@@ -288,7 +340,7 @@ def map(**kwargs):
     See help(hist).
     """
     wlist=copy(kwargs.get('where',None))
-    p=get(**kwargs,output='pandas')
+    p=get(**kwargs)
 
     which=kwargs.get('which',None)
 
