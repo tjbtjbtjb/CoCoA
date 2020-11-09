@@ -111,7 +111,7 @@ class CocoDisplay():
             for i in input_names_data:
                 p = [standardfig.line(x='date', y=i, source=ColumnDataSource(value),
                 color=next(colors), line_width=3, legend_label=key,
-                name=i,hover_line_color="red",hover_line_width=4) for key,value in dict_filter_data[i].items()]
+                name=i,hover_line_width=4) for key,value in dict_filter_data[i].items()]
 
             #for i in p:
             #    standardfig.legend.items[p.index(i)].label = 'Tarace '
@@ -302,7 +302,7 @@ def resume_pandas(self,pd):
     [self.returnFits(i) for i in self.countries]
 
     pop_pd=w.getData()[w.getData()['Country'].isin(self.countries)]
-    pop=pop_pd.sort_values(by=['Country'])['Population']
+        pop=pop_pd.sort_values(by=['Country'])['Population']
 
     Pourcentage=[[100*(self.GetTodayProjNdeaths()[i]-\
                       (babypandas_cumul.loc[babypandas_cumul['country']==i]).loc[self.stop_date_fit]['cases'])\
@@ -329,40 +329,21 @@ def resume_pandas(self,pd):
     resume=resume.set_index('Country')
     resume=resume.sort_values(by=['Country'])
 '''
-
 class WorldMapDisplay():
-    def __init__(self, countries, cumul_or_diff, which_data):
+    def __init__(self, mypandas, which_data):
         self.geolocator = Nominatim(
             user_agent="Worldmap for Covid-19 studing case")
         # ,tiles="cartodbpositron")#,"CartoDB dark_matter")
-        self.world_map = folium.Map(width=600, height=400, location=[
-                                    48.52, 2.19], zoom_start=3)
-        self.countries = sorted(countries)
-        self.which_data = which_data
-        p = cc.Parser()
-        babypandas = (p.get_stats(location=self.countries,type=cumul_or_diff,
-                                 which=which_data, output='pandas'))
-        babypandascumul = babypandas
-        babypandascumul['cumul'] = babypandas.groupby(
-            ['location'])['cases'].apply(lambda x: x.cumsum())
+        self.world_map = folium.Map(width=600, height=400, location=[48.52, 2.19], zoom_start=3)
 
-        mask_date_max = babypandas.groupby(['location'])['date'].max()
-        babypandascumulmasked_date = babypandascumul['date'].isin(
-            mask_date_max)
-        self.data = pd.pivot_table(
-            babypandas, index='date', columns='location', values='cases').reset_index()
-        if cumul_or_diff == 'cumul':
-            self.data = pd.pivot_table(
-                babypandascumul, index='date', columns='location', values='cumul').reset_index()
-
+        print( mypandas.location.unique)
+        print([i for i in zip(*mypandas.groupby('location').agg({mypandas.columns[3]: "sum"}).values)])
         map_data = pd.DataFrame({
-            'location': self.countries,
-            'totcases': babypandascumul[babypandascumulmasked_date]['cumul'].to_list()
+            'location': mypandas.location.unique,
+            'totcases': mypandas.groupby('location').agg({mypandas.columns[3]: "sum"}).values
         })
-        self.totalsallcountries = sum(
-            babypandascumul[babypandascumulmasked_date]['cumul'])
-        self.maxdeaths = max(
-            babypandascumul[babypandascumulmasked_date]['cumul'])
+        print(map_data)
+
         self.map_dict = map_data.set_index('location')['totcases'].to_dict()
 
     def LatLong(self, location):
