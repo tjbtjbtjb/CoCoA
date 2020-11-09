@@ -164,7 +164,7 @@ class DataBase():
             pandas_jhu_db = pandas_jhu_db.set_index('location')
             self.dates    = pandas.to_datetime(pandas_jhu_db.columns,errors='coerce')
             pandas_jhu[ext] = pandas_jhu_db
-        self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
+        self.dates=[i.strftime('%m/%d/%y') for i in self.dates]
         return pandas_jhu
 
     def csv_to_pandas_index_location_date(self,url,**kwargs):
@@ -230,7 +230,7 @@ class DataBase():
             #pandas_temp   = pandas_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
             pandas_dico[w] = pandas_temp
             self.dates    = pandas.to_datetime(pandas_dico[w].columns,errors='coerce')
-            self.dates    = [i.strftime('%-m/%-d/%y') for i in self.dates]
+            self.dates    = [i.strftime('%m/%d/%y') for i in self.dates]
         return pandas_dico
 
     def fill_cocoa_field(self):
