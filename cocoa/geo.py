@@ -46,7 +46,7 @@ class GeoManager():
             'name',           # Standard name ( != Official, caution )
             'num']            # Numeric standard
 
-    _list_db=[None,'jhu','worldometers','owid','spf'] # first is default
+    _list_db=[None,'jhu','worldometers','owid'] # first is default
     _list_output=['list','dict','pandas'] # first is default
 
     _standard = None # currently used normalisation standard
@@ -138,6 +138,9 @@ class GeoManager():
         elif not isinstance(w,list):
             raise CocoaTypeError('Waiting for str, list of str or pandas'
                 'as input of get_standard function member of GeoManager')
+
+        w=[v.title() for v in w] # capitalize first letter of each name
+
         w0=w.copy()
 
         if db:
@@ -216,15 +219,15 @@ class GeoManager():
                 "Korea, South":"KOR",\
                 "Taiwan*":"Taiwan",\
                 "Laos":"LAO",\
-                "West Bank and Gaza":"PSE",\
+                "West Bank And Gaza":"PSE",\
                 "Burma":"Myanmar",\
                 "Iran":"IRN",\
                 "Diamond Princess":"",\
-                "MS Zaandam":""
+                "Ms Zaandam":"",\
                     })  # last two are names of boats
         elif db=='worldometers':
             translation_dict.update({\
-                "DR Congo":"COD",\
+                "Dr Congo":"COD",\
                 "Congo":"COG",\
                 "Iran":"IRN",\
                 "South Korea":"KOR",\
