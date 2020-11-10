@@ -217,55 +217,6 @@ def plot(**kwargs):
         t=get(**kwargs,output='pandas')
 
     which=kwargs.get('which',listwhich()[0])
-    yscale=kwargs.get('yscale','lin')
-    if yscale=='lin':
-        fplot=plt.plot
-    elif yscale=='log':
-        fplot=plt.semilogy
-    else:
-        raise CocoaKeyError('yscale option "'+yscale+'" is not valid. See help.')
-    for k in t.location.unique():
-        fplot(t[t.location==k].date,t[t.location==k][which],label=k)
-
-    plt.legend()
-    plt.xlabel('time')
-    plt.show()
-
-# ----------------------------------------------------------------------
-# --- plot(**kwargs) ---------------------------------------------------
-# ----------------------------------------------------------------------
-
-def cocoaplot(**kwargs):
-    """Plot data according to arguments (same as the get function)
-    and options.
-
-    Keyword arguments
-    -----------------
-
-    where (mandatory), what, which, whom : (see help(get))
-
-    yscale --   'lin' (linear) or 'log' (logarithmic) vertical y scale.
-                If log scale is selected null values are hidden.
-
-    input  --   input data to plot within the cocoa framework (e.g.
-                after some analysis or filtering). Default is None which
-                means that we use the basic raw data through the get
-                function.
-                When the 'input' keyword is set, where, what, which,
-                whom keywords are ignored.
-                input should be given as valid cocoa pandas dataframe.
-    """
-
-    input_arg=kwargs.get('input',None)
-    if input_arg != None:
-        if not isinstance(input_arg,pd.DataFrame):
-            raise CocoaTypeError('Waiting input as valid cocoa pandas '
-                'dataframe. See help.')
-        t=input_arg
-    else:
-        t=get(**kwargs,output='pandas')
-
-    which=kwargs.get('which',listwhich()[0])
     
     title=kwargs.get('title',None)
     width_height=kwargs.get('width_height',None)
