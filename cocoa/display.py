@@ -296,34 +296,20 @@ class CocoDisplay():
     @staticmethod
     def return_map(mypandas):
         which_data = mypandas.columns[2]
-<<<<<<< HEAD
         jhu_stuff = mypandas.loc[(mypandas.date == mypandas.date.max())]
-=======
-        mapa = folium.Map(width=600, height=400, location=[48.52, 2.19], zoom_start=3)
-
-        jhu_stuff = mypandas.loc[(mypandas.date == mypandas.date.max())]
-
->>>>>>> 356f2e56faacb8eb6b998d636204f802bb802e80
         pandas_data = pd.DataFrame({
             'location': jhu_stuff.location,
             'totcases': jhu_stuff.iloc[:, 2]
         })
-<<<<<<< HEAD
-=======
-
->>>>>>> 356f2e56faacb8eb6b998d636204f802bb802e80
         geo = coge.GeoManager('name')
         info = coge.GeoInfo()
         p=gpd.GeoDataFrame(info.add_field(input=pandas_data ,\
             geofield='location',field=['geometry','country_name'])[['totcases',"geometry","country_name","location"]])
         merged_json = json.loads(p.to_json())
 
-<<<<<<< HEAD
 
         #centroid=gpd.GeoSeries(unary_union([gpd.GeoSeries(p[p.location==i]['geometry']) for i in jhu_stuff.location]))
         mapa = folium.Map(width=600, height=400, location=[np.mean(p.centroid.y),np.mean(p.centroid.x)], zoom_start=2)
-=======
->>>>>>> 356f2e56faacb8eb6b998d636204f802bb802e80
         folium.Choropleth(
         geo_data=merged_json,
         name='choropleth',
