@@ -31,7 +31,7 @@ setup(
         'geopandas',\
         'geopy',\
         #'itertools',\  std
-        'json',\
+        #'json',\  std
         #'math',\   std
         'matplotlib',\
         'numpy',\
