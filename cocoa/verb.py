@@ -13,6 +13,9 @@ default value is 1 (print information to stdout)
 _verbose_mode = 1 # default
 
 def info(*args):
+    """Print to stdout with similar args as the builtin print function,
+    if _verbose_mode > 0
+    """
     if _verbose_mode > 0:
         print(*args)
         
