@@ -33,18 +33,16 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import geopandas as gpd
 
-import cocoa.world as cowo
 import cocoa.covid19 as coco
 import cocoa.geo as coge
 from cocoa.error import *
 import cocoa.display as cd
 
 from bokeh.io import show, output_notebook
-from bokeh.io import output_notebook, show, output_file
 output_notebook(hide_banner=True)
 
 from bokeh.plotting import figure
-from bokeh.models import GeoJSONDataSource, LinearColorMapper,LogColorMapper, ColorBar, HoverTool,LogTicker
+from bokeh.models import GeoJSONDataSource, LinearColorMapper, ColorBar, HoverTool
 from bokeh.palettes import brewer
 import json
 
@@ -55,9 +53,8 @@ _listwhom=['jhu',    # John Hopkins University first base, default
             'opencovid19'] #  see data.gouv.fr
 _whom = _listwhom[0] # default base
 
-
-_db = coco.DataBase('jhu')
-cocoplot = cd.CocoDisplay()
+_db = coco.DataBase(_whom) # initialization with default
+_cocoplot = cd.CocoDisplay()
 
 _info = coge.GeoInfo() # will be the info (pseudo) private variable
 _reg = coge.GeoRegion()
@@ -66,11 +63,7 @@ _listwhat=['cumul','diff',  # first one is default but we must avoid uppercases
             'daily',
             'weekly']
 
-
-# _w = cowo.WorldInfo() # not yet implemented in this cocoa frontend functions
-
-
-# --- Front end functions -000------------------------------------------
+# --- Front end functions ----------------------------------------------
 
 
 # ----------------------------------------------------------------------
@@ -105,11 +98,12 @@ def setwhom(base):
     By default, the listbase()[0] is the default base used in other
     functions.
     """
-    warnings.warn("cocoa.setbase() function not yet fully implemented")
+    global _whom,_db
     if base not in listwhom():
         raise CocoaDbError(base+' is not a supported database. '
             'See cocoa.listbase() for the full list.')
-    _db = coco.DataBase(base)
+    if _whom != base:
+        _db = coco.DataBase(base)
     return _db.get_available_keys_words()
 
 # ----------------------------------------------------------------------
@@ -130,17 +124,6 @@ def listwhich(dbname=None):
             'See cocoa.listwhom() for the full list.')
     return _db.get_available_keys_words()
 
-# ----------------------------------------------------------------------
-# --- listwhat() -------------------------------------------------------
-# ----------------------------------------------------------------------
-
-def listwhat():
-    """Get what sort of time series data are available.
-
-    By default, the listwhat()[0] is the default what field in other
-    functions.
-    """
-    return _listwhat
 
 # ----------------------------------------------------------------------
 # --- get(**kwargs) ----------------------------------------------------
@@ -169,7 +152,7 @@ def get(**kwargs):
 
     output --   output format returned ( list (default), dict or pandas)
     """
-    global _db
+    global _db,_whom
     where=kwargs.get('where',None)
     what=kwargs.get('what',None)
     which=kwargs.get('which',None)
@@ -180,16 +163,11 @@ def get(**kwargs):
     if not where:
         raise CocoaKeyError('No where keyword given')
 
-    if whom:
-        _db = coco.DataBase(whom)
     if not whom:
         whom=_whom
-    #elif whom not in listwhom():
-    #    raise CocoaKeyError('Whom option '+whom+' not supported'
-    #                        'See listwhom() for list.')
-    else:
-        warnings.warn('whom keyword not yet implemented. Using default')
-
+    if whom != _whom:
+        setwhom(whom)
+    
     if not what:
         what=listwhat()[0]
     elif what not in listwhat():
@@ -239,60 +217,11 @@ def plot(**kwargs):
         t=get(**kwargs,output='pandas')
 
     which=kwargs.get('which',listwhich()[0])
-    yscale=kwargs.get('yscale','lin')
-    if yscale=='lin':
-        fplot=plt.plot
-    elif yscale=='log':
-        fplot=plt.semilogy
-    else:
-        raise CocoaKeyError('yscale option "'+yscale+'" is not valid. See help.')
-    for k in t.location.unique():
-        fplot(t[t.location==k].date,t[t.location==k][which],label=k)
-
-    plt.legend()
-    plt.xlabel('time')
-    plt.show()
-
-# ----------------------------------------------------------------------
-# --- plot(**kwargs) ---------------------------------------------------
-# ----------------------------------------------------------------------
-
-def cocoaplot(**kwargs):
-    """Plot data according to arguments (same as the get function)
-    and options.
-
-    Keyword arguments
-    -----------------
-
-    where (mandatory), what, which, whom : (see help(get))
-
-    yscale --   'lin' (linear) or 'log' (logarithmic) vertical y scale.
-                If log scale is selected null values are hidden.
-
-    input  --   input data to plot within the cocoa framework (e.g.
-                after some analysis or filtering). Default is None which
-                means that we use the basic raw data through the get
-                function.
-                When the 'input' keyword is set, where, what, which,
-                whom keywords are ignored.
-                input should be given as valid cocoa pandas dataframe.
-    """
-
-    input_arg=kwargs.get('input',None)
-    if input_arg != None:
-        if not isinstance(input_arg,pd.DataFrame):
-            raise CocoaTypeError('Waiting input as valid cocoa pandas '
-                'dataframe. See help.')
-        t=input_arg
-    else:
-        t=get(**kwargs,output='pandas')
-
-    which=kwargs.get('which',listwhich()[0])
     
     title=kwargs.get('title',None)
     width_height=kwargs.get('width_height',None)
     
-    fig = cocoplot.cocoa_basic_plot(t,which,title,width_height)
+    fig = _cocoplot.cocoa_basic_plot(t,which,title,width_height)
     show(fig)
     
 # ----------------------------------------------------------------------
@@ -342,64 +271,16 @@ def map(**kwargs):
     """Create a map according to arguments and options.
     See help(hist).
     """
-    wlist=copy(kwargs.get('where',None))
-    p=get(**kwargs)
+    input_arg=kwargs.get('input',None)
+    where=kwargs.get('where',None)
+    
+    if input_arg != None:
+        if not isinstance(input_arg,pd.DataFrame):
+            raise CocoaTypeError('Waiting input as valid cocoa pandas '
+                'dataframe. See help.')
+        t=input_arg
+    else:
+        t=get(**kwargs,output='pandas')
 
-    which=kwargs.get('which',None)
-
-    if which == None:
-        which = listwhich()[0]
-
-    lastdate=p["date"].max()
-    p=gpd.GeoDataFrame(_info.add_field(input=p[p["date"]==lastdate],\
-        geofield='location',field=['geometry','country_name'])[[which,"geometry","country_name","location"]])
-
-    p=p[p['geometry']!=None] # if some countries does not have an available geometry
-
-
-    for k in [wlist]:
-        if k in _reg.get_region_list():
-            k_lst=_reg.get_countries_from_region(k)
-            p.loc[p["location"].isin(k_lst),"location"]=k
-            p=p.dissolve(aggfunc='sum',by='location') # merge the geometry and sum the cases for region
-
-    p["cname"]=p.index
-    #Read data to json
-    merged_json = json.loads(p.to_json())
-
-    #Convert to str like object
-    json_data = json.dumps(merged_json)
-    geosource = GeoJSONDataSource(geojson = json_data)
-
-    #Define a sequential multi-hue color palette.
-    palette = brewer['RdYlGn'][10] # see https://docs.bokeh.org/en/latest/docs/reference/palettes.html
-
-    hover = HoverTool(tooltips = [ ('Country','@cname'),
-                              ('Cases', '@'+str(which)) ] )
-
-    #Instantiate LinearColorMapper that linearly maps numbers in a range, into a sequence of colors.
-    color_mapper = LinearColorMapper(palette = palette)#, low = -50, high=50)
-
-    #Define custom tick labels for color bar.
-    #tick_labels = {'0': '0%', '5': '5%', '10':'10%', '15':'15%', '20':'20%'}#, '25':'25%', '30':'30%','35':'35%', '40': '>40%'}
-
-    #Create color bar.
-    color_bar = ColorBar(color_mapper=color_mapper, label_standoff=8,width = 500, height = 20,
-    border_line_color=None,location = (0,0), orientation = 'horizontal')#, major_label_overrides = tick_labels)
-
-    #Create figure object.
-    f = figure(title = 'CocoaPlot', \
-        plot_height = 700 , plot_width = 950,tools = [hover])#, toolbar_location = None)
-    f.xgrid.grid_line_color = None
-    f.ygrid.grid_line_color = None
-
-    #Add patch renderer to figure.
-    f.patches('xs','ys', source = geosource,fill_color = {'field' :which, 'transform' : color_mapper},\
-          line_color = 'black', line_width = 0.25, fill_alpha = 1)
-
-    #Specify figure layout.
-    f.add_layout(color_bar, 'below')
-
-    #Display figure.
-    output_notebook()
-    show(f)
+    return _cocoplot.return_map(t)
+    
