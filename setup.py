@@ -38,11 +38,11 @@ setup(
         'pandas',\
         'pycountry',\
         'pycountry_convert',\
-        'random',\
+        #'random',\   std
         'requests',\
         'scipy',\
         #'sys',\   std
-        'warnings',\
+        #'warnings',\  std
         ],
     # *strongly* suggested for sharing
     version='pre1.0',
