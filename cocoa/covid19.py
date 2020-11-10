@@ -21,7 +21,7 @@ import numpy as np
 from datetime import datetime as dt
 import pandas as pd
 import sys
-from cocoa.verb import info
+from cocoa.verb import info,verb
 import cocoa.geo as coge
 from cocoa.error import *
 from scipy import stats as sps
@@ -30,6 +30,7 @@ import random
 class DataBase():
     ''' Parse the chosen database and a return a pandas '''
     def __init__(self,db_name):
+        verb("Init of covid19.DataBase()")
         self.database_name=['jhu','spf','owid','opencovid19']
         self.pandas_datase = {}
         self.available_keys_words=[]

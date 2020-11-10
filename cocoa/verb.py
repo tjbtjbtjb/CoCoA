@@ -19,3 +19,10 @@ def info(*args):
     if _verbose_mode > 0:
         print(*args)
         
+def verb(*args):
+    """Print to stdout with similar args as the builtin print function,
+    if _verbose_mode > 1
+    """
+    if _verbose_mode > 1:
+        print(*args)
+        
