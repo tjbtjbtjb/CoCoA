@@ -14,8 +14,12 @@ An interface module to easily plot cocoa data with bokeh
 
 """
 
+import random
 import math
 import pandas as pd
+import geopandas as gpd
+
+from datetime import datetime as dt
 from collections import defaultdict
 
 from cocoa import covid19 as cc
@@ -23,28 +27,27 @@ from cocoa import covid19 as cc
 import bokeh
 from bokeh.io import show, output_notebook
 from bokeh.models import ColumnDataSource, ColorBar, HoverTool, Legend
-from bokeh.plotting import figure, output_file
+from bokeh.plotting import figure, output_file, show
 from bokeh.palettes import brewer
 from bokeh.layouts import row, column, gridplot
 from bokeh.models import CustomJS, Slider, Select, Plot, \
     Button, LinearAxis, Range1d, DatetimeTickFormatter
-from bokeh.models import CheckboxGroup, Toggle, RadioGroup
+from bokeh.models import CheckboxGroup, RadioGroup, Toggle, RadioGroup
 from bokeh.palettes import Paired12
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.models import Label, LabelSet
-from bokeh.models import Grid, Line
+from bokeh.models import ColumnDataSource, Grid, Line, LinearAxis, Plot
 from bokeh.models import DataRange1d
 from bokeh.models import LogScale
 import bokeh.palettes
 import itertools
 import sys
-from cocoa.error import *
-from cocoa.verb import info
-
+import cocoa.geo as coge
 #import plotly.express as px
 #import plotly.graph_objects as go
-#from branca.colormap import LinearColormap
+from branca.colormap import LinearColormap
 import folium
+import json
 from geopy.geocoders import Nominatim
 import altair as alt
 
@@ -72,7 +75,7 @@ class CocoDisplay():
         tooltips='Date: @date{%F} <br>  $name: @$name'
 
         if type(input_names_data) is None.__class__:
-            raise CocoaKeyError("Need variable to plot", file=sys.stderr)
+            print("Need variable to plot", file=sys.stderr)
 
         if not isinstance(input_names_data, list):
            input_names_data=[input_names_data]
@@ -110,7 +113,7 @@ class CocoDisplay():
             for i in input_names_data:
                 p = [standardfig.line(x='date', y=i, source=ColumnDataSource(value),
                 color=next(colors), line_width=3, legend_label=key,
-                name=i,hover_line_color="red",hover_line_width=4) for key,value in dict_filter_data[i].items()]
+                name=i,hover_line_width=4) for key,value in dict_filter_data[i].items()]
 
             #for i in p:
             #    standardfig.legend.items[p.index(i)].label = 'Tarace '
@@ -285,8 +288,43 @@ class CocoDisplay():
         return self.cocoa_pandas
 
     def __delete__(self, instance):
-        info("deleted in descriptor object")
+        print("deleted in descriptor object")
         del self.value
+
+    @staticmethod
+    def return_map(mypandas):
+        which_data = mypandas.columns[2]
+        mapa = folium.Map(width=600, height=400, location=[48.52, 2.19], zoom_start=3)
+
+        jhu_stuff = mypandas.loc[(mypandas.date == mypandas.date.max())]
+
+        pandas_data = pd.DataFrame({
+            'location': jhu_stuff.location,
+            'totcases': jhu_stuff.iloc[:, 2]
+        })
+
+        geo = coge.GeoManager('name')
+        info = coge.GeoInfo()
+        p=gpd.GeoDataFrame(info.add_field(input=pandas_data ,\
+            geofield='location',field=['geometry','country_name'])[['totcases',"geometry","country_name","location"]])
+        merged_json = json.loads(p.to_json())
+
+        folium.Choropleth(
+        geo_data=merged_json,
+        name='choropleth',
+        data=pandas_data,
+        columns=['location', 'totcases'],
+        key_on='feature.properties.location',
+        fill_color='YlOrRd',
+        fill_opacity=0.7,
+        line_opacity=0.2,
+        legend_name='Total Cases'
+        ).add_to(mapa)
+
+        folium.LayerControl().add_to(mapa)
+
+        return mapa
+
 
 def resume_pandas(self,pd):
     pd['New cases (last 30 days)'] = pd['deaths'].apply(self.sparkline)
@@ -328,112 +366,3 @@ def resume_pandas(self,pd):
     resume=resume.set_index('Country')
     resume=resume.sort_values(by=['Country'])
 '''
-
-class WorldMapDisplay():
-    def __init__(self, countries, cumul_or_diff, which_data):
-        self.geolocator = Nominatim(
-            user_agent="Worldmap for Covid-19 studing case")
-        # ,tiles="cartodbpositron")#,"CartoDB dark_matter")
-        self.world_map = folium.Map(width=600, height=400, location=[
-                                    48.52, 2.19], zoom_start=3)
-        self.countries = sorted(countries)
-        self.which_data = which_data
-        p = cc.Parser()
-        babypandas = (p.get_stats(location=self.countries,type=cumul_or_diff,
-                                 which=which_data, output='pandas'))
-        babypandascumul = babypandas
-        babypandascumul['cumul'] = babypandas.groupby(
-            ['location'])['cases'].apply(lambda x: x.cumsum())
-
-        mask_date_max = babypandas.groupby(['location'])['date'].max()
-        babypandascumulmasked_date = babypandascumul['date'].isin(
-            mask_date_max)
-        self.data = pd.pivot_table(
-            babypandas, index='date', columns='location', values='cases').reset_index()
-        if cumul_or_diff == 'cumul':
-            self.data = pd.pivot_table(
-                babypandascumul, index='date', columns='location', values='cumul').reset_index()
-
-        map_data = pd.DataFrame({
-            'location': self.countries,
-            'totcases': babypandascumul[babypandascumulmasked_date]['cumul'].to_list()
-        })
-        self.totalsallcountries = sum(
-            babypandascumul[babypandascumulmasked_date]['cumul'])
-        self.maxdeaths = max(
-            babypandascumul[babypandascumulmasked_date]['cumul'])
-        self.map_dict = map_data.set_index('location')['totcases'].to_dict()
-
-    def LatLong(self, location):
-        if location != None:
-            location = self.geolocator.geocode(location)
-            if location != None:
-                Lat = location.latitude  # , location.longitude)
-                Long = location.longitude
-            else:
-                Lat = float("Nan")  # , location.longitude)
-                Long = float("Nan")
-        return (Lat, Long)
-
-    def DrawPopUpCircle(self):
-        for coun in self.countries:
-            filter_data = self.data[['date', coun]].rename(
-                columns={coun: 'cases'})
-            tot = self.map_dict[coun]
-            latlong = self.LatLong(coun)
-            start_coords = [latlong[0], latlong[1]]
-            source = pd.DataFrame(
-                {
-                    'date':  filter_data['date'],
-                    'cases':  filter_data['cases'],
-                })
-            if sum(filter_data['cases']) != 0:
-                chart = alt.Chart(source).mark_line().encode(
-                    alt.X('date', axis=alt.Axis(title='Date')),
-                    alt.Y('cases', axis=alt.Axis(title='Cases'))).properties(title=coun.upper())
-                vis1 = chart.to_json()
-                vega = folium.features.VegaLite(
-                    vis1, width='100%', height='100%')
-
-                #
-                maxrad = 50
-                circ_mkr = folium.CircleMarker(
-                    location=start_coords,
-                    radius=maxrad*tot/self.totalsallcountries,
-                    color='blue',
-                    fill=True,
-                    fill_color='red',
-                    fillOpacity=1.0,
-                    opacity=1.0,
-                    tooltip=coun,
-                    popup=folium.Popup(max_width=300).add_child(vega))
-                circ_mkr.add_to(self.world_map)
-
-    def drawLocation(self):
-        folium.GeoJson(
-            data='https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json',
-            style_function=lambda feature: {
-                'fillColor': self.getColor(feature),
-                'caption': 'Total deaths',
-                'fillOpacity': 0.5,
-                'weight': 0.5
-            }).add_to(self.world_map)
-
-    def getColor(self, feature):
-        value = self.map_dict.get(feature['properties']['name'])
-        self.color_scale = LinearColormap(['yellow', 'red'],
-                                          vmin=min(self.map_dict.values()), vmax=max(self.map_dict.values()))
-        # vmin = 0, vmax = 150)
-
-        if value is None:
-            return '#8c8c8c'  # MISSING -> gray
-        else:
-            return self.color_scale(value)
-
-    def returnMap(self):
-        self.drawLocation()
-        self.DrawPopUpCircle()
-        colormap = self.color_scale.to_step(len(self.countries))
-        colormap.caption = self.which_data.upper()
-        self.world_map.add_child(colormap)
-        return self.world_map
