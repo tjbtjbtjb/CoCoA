@@ -15,21 +15,18 @@ The parser class gives a simplier access through an already filled dict of data
 
 """
 
-import requests
 import pandas
 from collections import defaultdict
 import numpy as np
 from datetime import datetime as dt
-from datetime import datetime
-import datetime
-from datetime import timedelta
 import pandas as pd
 import sys
-from functools import reduce
+from cocoa.verb import info
 import cocoa.geo as coge
 from cocoa.error import *
 from scipy import stats as sps
 import random
+
 class DataBase():
     ''' Parse the chosen database and a return a pandas '''
     def __init__(self,db_name):
@@ -48,14 +45,14 @@ class DataBase():
             self.geo = coge.GeoManager('name')
 
         if self.db not in self.database_name:
-            print('Unknown ' + self.db + '. Available database so far in CoCoa are : ' + str(self.database_name) ,file=sys.stderr)
+            raise CocoaDbError('Unknown ' + self.db + '. Available database so far in CoCoa are : ' + str(self.database_name) ,file=sys.stderr)
         else:
             if self.db == 'jhu':
-                print('JHU aka Johns Hopkins database selected ...')
+                info('JHU aka Johns Hopkins database selected ...')
                 self.pandas_datase = self.parse_convert_jhu()
             elif self.db == 'spf':
-                print('SPF aka Sante Publique France database selected ...')
-                print('... tree differents db from SPF will be parsed ...')
+                info('SPF aka Sante Publique France database selected ...')
+                info('... tree differents db from SPF will be parsed ...')
                 # https://www.data.gouv.fr/fr/datasets/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/
                 # Parse and convert spf data structure to JHU one for historical raison
                 # hosp Number of people currently hospitalized
@@ -100,7 +97,7 @@ class DataBase():
                 result = pd.concat([spf1, spf2,spf3,spf4], axis=1, sort=False)
                 self.pandas_datase = self.pandas_index_location_date_to_jhu_format(result,columns_skipped=columns_skipped)
             elif self.db == 'opencovid19':
-                print('OPENCOVID19 selected ...')
+                info('OPENCOVID19 selected ...')
                 rename={'jour':'date','maille_nom':'location'}
                 constraints={'granularite':'pays'}
                 columns_skipped = ['maille_code','source_nom','source_url','source_archive','source_type']
@@ -108,7 +105,7 @@ class DataBase():
                            constraints=constraints,rename_columns=rename,separator=',')
                 self.pandas_datase = self.pandas_index_location_date_to_jhu_format(opencovid19,columns_skipped=columns_skipped)
             elif self.db == 'owid':
-                print('OWID aka \"Our World in Data\" database selected ...')
+                info('OWID aka \"Our World in Data\" database selected ...')
                 columns_keeped = ['total_cases', 'new_cases', 'total_deaths','new_deaths', 'total_cases_per_million',
                 'new_cases_per_million', 'total_deaths_per_million','new_deaths_per_million', 'total_tests', 'new_tests',
                 'total_tests_per_thousand', 'new_tests_per_thousand', 'new_tests_smoothed', 'new_tests_smoothed_per_thousand','stringency_index']
@@ -117,13 +114,13 @@ class DataBase():
                 separator=',',drop_field=drop_field)
                 self.pandas_datase = self.pandas_index_location_date_to_jhu_format(owid,columns_keeped=columns_keeped)
             self.fill_cocoa_field()
-            print('Few information concernant the selected database : ', self.get_db())
-            print('Available keys words for: ',self.get_available_keys_words())
+            info('Few information concernant the selected database : ', self.get_db())
+            info('Available which key-words for: ',self.get_available_keys_words())
             if self.get_db() != 'opencovid19':
-                print('Example of location : ',  ', '.join(random.choices(self.get_locations(), k=5)), ' ...')
+                info('Example of location : ',  ', '.join(random.choices(self.get_locations(), k=5)), ' ...')
             else:
-                print('Only available location: ', self.get_locations())
-            print('Last date data ', self.get_dates()[-1])
+                info('Only available location: ', self.get_locations())
+            info('Last date data ', self.get_dates()[-1])
 
 
     def get_db(self):
@@ -164,7 +161,7 @@ class DataBase():
             pandas_jhu_db = pandas_jhu_db.set_index('location')
             self.dates    = pandas.to_datetime(pandas_jhu_db.columns,errors='coerce')
             pandas_jhu[ext] = pandas_jhu_db
-        self.dates=[i.strftime('%-m/%-d/%y') for i in self.dates]
+        self.dates=[i.strftime('%m/%d/%y') for i in self.dates]
         return pandas_jhu
 
     def csv_to_pandas_index_location_date(self,url,**kwargs):
@@ -230,7 +227,7 @@ class DataBase():
             #pandas_temp   = pandas_temp.rename(columns=lambda x: x.strftime('%m/%d/%y'))
             pandas_dico[w] = pandas_temp
             self.dates    = pandas.to_datetime(pandas_dico[w].columns,errors='coerce')
-            self.dates    = [i.strftime('%-m/%-d/%y') for i in self.dates]
+            self.dates    = [i.strftime('%m/%d/%y') for i in self.dates]
         return pandas_dico
 
     def fill_cocoa_field(self):
