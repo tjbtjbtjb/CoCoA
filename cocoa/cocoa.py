@@ -38,7 +38,7 @@ import cocoa.geo as coge
 from cocoa.error import *
 import cocoa.display as cd
 
-from bokeh.io import show, output_notebook, output_file
+from bokeh.io import show, output_notebook
 output_notebook(hide_banner=True)
 
 from bokeh.plotting import figure

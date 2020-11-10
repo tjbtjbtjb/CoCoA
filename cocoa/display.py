@@ -41,6 +41,9 @@ import bokeh.palettes
 import itertools
 import sys
 import cocoa.geo as coge
+from cocoa.error import *
+from cocoa.verb import info
+
 #import plotly.express as px
 #import plotly.graph_objects as go
 #from branca.colormap import LinearColormap
@@ -73,7 +76,7 @@ class CocoDisplay():
         tooltips='Date: @date{%F} <br>  $name: @$name'
 
         if type(input_names_data) is None.__class__:
-            print("Need variable to plot", file=sys.stderr)
+            raise CocoaKeyError("Need variable to plot", file=sys.stderr)
 
         if not isinstance(input_names_data, list):
            input_names_data=[input_names_data]
@@ -286,7 +289,7 @@ class CocoDisplay():
         return self.cocoa_pandas
 
     def __delete__(self, instance):
-        print("deleted in descriptor object")
+        info("deleted in descriptor object")
         del self.value
 
 def resume_pandas(self,pd):
