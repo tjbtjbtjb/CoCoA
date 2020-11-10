@@ -271,64 +271,16 @@ def map(**kwargs):
     """Create a map according to arguments and options.
     See help(hist).
     """
-    wlist=copy(kwargs.get('where',None))
-    p=get(**kwargs)
+    input_arg=kwargs.get('input',None)
+    where=kwargs.get('where',None)
+    
+    if input_arg != None:
+        if not isinstance(input_arg,pd.DataFrame):
+            raise CocoaTypeError('Waiting input as valid cocoa pandas '
+                'dataframe. See help.')
+        t=input_arg
+    else:
+        t=get(**kwargs,output='pandas')
 
-    which=kwargs.get('which',None)
-
-    if which == None:
-        which = listwhich()[0]
-
-    lastdate=p["date"].max()
-    p=gpd.GeoDataFrame(_info.add_field(input=p[p["date"]==lastdate],\
-        geofield='location',field=['geometry','country_name'])[[which,"geometry","country_name","location"]])
-
-    p=p[p['geometry']!=None] # if some countries does not have an available geometry
-
-
-    for k in [wlist]:
-        if k in _reg.get_region_list():
-            k_lst=_reg.get_countries_from_region(k)
-            p.loc[p["location"].isin(k_lst),"location"]=k
-            p=p.dissolve(aggfunc='sum',by='location') # merge the geometry and sum the cases for region
-
-    p["cname"]=p.index
-    #Read data to json
-    merged_json = json.loads(p.to_json())
-
-    #Convert to str like object
-    json_data = json.dumps(merged_json)
-    geosource = GeoJSONDataSource(geojson = json_data)
-
-    #Define a sequential multi-hue color palette.
-    palette = brewer['RdYlGn'][10] # see https://docs.bokeh.org/en/latest/docs/reference/palettes.html
-
-    hover = HoverTool(tooltips = [ ('Country','@cname'),
-                              ('Cases', '@'+str(which)) ] )
-
-    #Instantiate LinearColorMapper that linearly maps numbers in a range, into a sequence of colors.
-    color_mapper = LinearColorMapper(palette = palette)#, low = -50, high=50)
-
-    #Define custom tick labels for color bar.
-    #tick_labels = {'0': '0%', '5': '5%', '10':'10%', '15':'15%', '20':'20%'}#, '25':'25%', '30':'30%','35':'35%', '40': '>40%'}
-
-    #Create color bar.
-    color_bar = ColorBar(color_mapper=color_mapper, label_standoff=8,width = 500, height = 20,
-    border_line_color=None,location = (0,0), orientation = 'horizontal')#, major_label_overrides = tick_labels)
-
-    #Create figure object.
-    f = figure(title = 'CocoaPlot', \
-        plot_height = 700 , plot_width = 950,tools = [hover])#, toolbar_location = None)
-    f.xgrid.grid_line_color = None
-    f.ygrid.grid_line_color = None
-
-    #Add patch renderer to figure.
-    f.patches('xs','ys', source = geosource,fill_color = {'field' :which, 'transform' : color_mapper},\
-          line_color = 'black', line_width = 0.25, fill_alpha = 1)
-
-    #Specify figure layout.
-    f.add_layout(color_bar, 'below')
-
-    #Display figure.
-    output_notebook()
-    show(f)
+    return _cocoplot.return_map(t)
+    
