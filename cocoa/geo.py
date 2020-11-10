@@ -222,8 +222,6 @@ class GeoManager():
                 "Iran":"IRN",\
                 "Diamond Princess":"",\
                 "Ms Zaandam":"",\
-                "French Southern And Antarctic Lands":"French Southern Territories",\
-                "Ivory Coast":"Ivoire",\
                     })  # last two are names of boats
         elif db=='worldometers':
             translation_dict.update({\
