@@ -53,9 +53,8 @@ _listwhom=['jhu',    # John Hopkins University first base, default
             'opencovid19'] #  see data.gouv.fr
 _whom = _listwhom[0] # default base
 
-
-_db = coco.DataBase('jhu')
-cocoplot = cd.CocoDisplay()
+_db = coco.DataBase(_whom) # initialization with default
+_cocoplot = cd.CocoDisplay()
 
 _info = coge.GeoInfo() # will be the info (pseudo) private variable
 _reg = coge.GeoRegion()
@@ -64,11 +63,7 @@ _listwhat=['cumul','diff',  # first one is default but we must avoid uppercases
             'daily',
             'weekly']
 
-
-# _w = cowo.WorldInfo() # not yet implemented in this cocoa frontend functions
-
-
-# --- Front end functions -000------------------------------------------
+# --- Front end functions ----------------------------------------------
 
 
 # ----------------------------------------------------------------------
@@ -103,11 +98,12 @@ def setwhom(base):
     By default, the listbase()[0] is the default base used in other
     functions.
     """
-    warnings.warn("cocoa.setbase() function not yet fully implemented")
+    global _whom,_db
     if base not in listwhom():
         raise CocoaDbError(base+' is not a supported database. '
             'See cocoa.listbase() for the full list.')
-    _db = coco.DataBase(base)
+    if _whom != base:
+        _db = coco.DataBase(base)
     return _db.get_available_keys_words()
 
 # ----------------------------------------------------------------------
@@ -156,7 +152,7 @@ def get(**kwargs):
 
     output --   output format returned ( list (default), dict or pandas)
     """
-    global _db
+    global _db,_whom
     where=kwargs.get('where',None)
     what=kwargs.get('what',None)
     which=kwargs.get('which',None)
@@ -167,16 +163,11 @@ def get(**kwargs):
     if not where:
         raise CocoaKeyError('No where keyword given')
 
-    if whom:
-        _db = coco.DataBase(whom)
     if not whom:
         whom=_whom
-    #elif whom not in listwhom():
-    #    raise CocoaKeyError('Whom option '+whom+' not supported'
-    #                        'See listwhom() for list.')
-    else:
-        warnings.warn('whom keyword not yet implemented. Using default')
-
+    if whom != _whom:
+        setwhom(whom)
+    
     if not what:
         what=listwhat()[0]
     elif what not in listwhat():
@@ -279,7 +270,7 @@ def cocoaplot(**kwargs):
     title=kwargs.get('title',None)
     width_height=kwargs.get('width_height',None)
     
-    fig = cocoplot.cocoa_basic_plot(t,which,title,width_height)
+    fig = _cocoplot.cocoa_basic_plot(t,which,title,width_height)
     show(fig)
     
 # ----------------------------------------------------------------------
