@@ -14,10 +14,8 @@ An interface module to easily plot cocoa data with bokeh
 
 """
 
-import random
 import math
 import pandas as pd
-from datetime import datetime as dt
 from collections import defaultdict
 
 from cocoa import covid19 as cc
@@ -25,16 +23,16 @@ from cocoa import covid19 as cc
 import bokeh
 from bokeh.io import show, output_notebook
 from bokeh.models import ColumnDataSource, ColorBar, HoverTool, Legend
-from bokeh.plotting import figure, output_file, show
+from bokeh.plotting import figure, output_file
 from bokeh.palettes import brewer
 from bokeh.layouts import row, column, gridplot
 from bokeh.models import CustomJS, Slider, Select, Plot, \
     Button, LinearAxis, Range1d, DatetimeTickFormatter
-from bokeh.models import CheckboxGroup, RadioGroup, Toggle, RadioGroup
+from bokeh.models import CheckboxGroup, Toggle, RadioGroup
 from bokeh.palettes import Paired12
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.models import Label, LabelSet
-from bokeh.models import ColumnDataSource, Grid, Line, LinearAxis, Plot
+from bokeh.models import Grid, Line
 from bokeh.models import DataRange1d
 from bokeh.models import LogScale
 import bokeh.palettes
@@ -48,7 +46,6 @@ from cocoa.verb import info
 #import plotly.graph_objects as go
 #from branca.colormap import LinearColormap
 import folium
-import json
 from geopy.geocoders import Nominatim
 import altair as alt
 
