@@ -24,15 +24,15 @@ setup(
     install_requires=[ \
         'altair',\
         'bokeh',\
-        'collections',\
-        'copy',\
+        #'collections',\   std
+        #'copy',\  std
         'datetime',\
         'folium',\
         'geopandas',\
         'geopy',\
-        'itertools',\
+        #'itertools',\  std
         'json',\
-        'math',\
+        #'math',\   std
         'matplotlib',\
         'numpy',\
         'pandas',\
@@ -41,7 +41,7 @@ setup(
         'random',\
         'requests',\
         'scipy',\
-        'sys',\
+        #'sys',\   std
         'warnings',\
         ],
     # *strongly* suggested for sharing
