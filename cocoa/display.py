@@ -38,7 +38,6 @@ from bokeh.models import LogScale
 import bokeh.palettes
 import itertools
 import sys
-import cocoa.geo as coge
 from cocoa.error import *
 from cocoa.verb import info
 
