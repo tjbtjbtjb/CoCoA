@@ -534,7 +534,7 @@ class GeoRegion():
 
     def get_countries_from_region(self,region):
         """ it returns a list of countries for the given region name.
-        The standard used is iso2. To convert to another standard,
+        The standard used is iso3. To convert to another standard,
         use the GeoManager class.
         """
         region=region.title()  # if not properly capitalized
