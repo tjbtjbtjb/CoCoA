@@ -43,6 +43,7 @@ import bokeh.palettes
 import itertools
 import sys
 import cocoa.geo as coge
+from pyproj import CRS
 #import plotly.express as px
 #import plotly.graph_objects as go
 from branca.colormap import LinearColormap
@@ -297,33 +298,48 @@ class CocoDisplay():
     def return_map(mypandas):
         which_data = mypandas.columns[2]
         jhu_stuff = mypandas.loc[(mypandas.date == mypandas.date.max())]
+
         pandas_data = pd.DataFrame({
             'location': jhu_stuff.location,
             'totcases': jhu_stuff.iloc[:, 2]
         })
         geo = coge.GeoManager('name')
         info = coge.GeoInfo()
-        p=gpd.GeoDataFrame(info.add_field(input=pandas_data ,\
-            geofield='location',field=['geometry','country_name'])[['totcases',"geometry","country_name","location"]])
-        merged_json = json.loads(p.to_json())
+
+        a = info.add_field(field=['geometry'],input=jhu_stuff ,geofield='location')
 
 
-        #centroid=gpd.GeoSeries(unary_union([gpd.GeoSeries(p[p.location==i]['geometry']) for i in jhu_stuff.location]))
-        mapa = folium.Map(width=600, height=400, location=[np.mean(p.centroid.y),np.mean(p.centroid.x)], zoom_start=2)
+        data=gpd.GeoDataFrame(info.add_field(input=a,geofield='location',\
+                                  field=['country_name']),crs="EPSG:4326")
+        data = data.loc[data.geometry != None]
+        data['geoid'] = data.index.astype(str)
+        data=data[['geoid','location','deaths','geometry']]
+        centroid=data.geometry.centroid
+        mapa = folium.Map(width=600, height=400, location=[centroid.y.mean(), centroid.x.mean()], zoom_start=2)
         folium.Choropleth(
-        geo_data=merged_json,
-        name='choropleth',
-        data=pandas_data,
-        columns=['location', 'totcases'],
-        key_on='feature.properties.location',
+        geo_data=data,
+        name='Covid19cases',
+        data=data,
+        columns=['geoid', 'deaths'],
+        key_on='feature.id',
         fill_color='YlOrRd',
         fill_opacity=0.7,
         line_opacity=0.2,
-        legend_name='Total Cases'
-        ).add_to(mapa)
+        line_color='white',
+        line_weight=0,
+        highlight=False,
+        smooth_factor=1.0,
+        legend_name= 'Covid19 cases').add_to(mapa)
 
-        folium.LayerControl().add_to(mapa)
-
+        folium.GeoJson(data,
+               name="Cases",
+               style_function=lambda x: {'color':'transparent','fillColor':'transparent','weight':0},
+               highlight_function=lambda x: {'weight':3, 'color':'blue'},
+               tooltip=folium.GeoJsonTooltip(fields=['location','deaths'],
+                                             aliases = ['country','totcases'],
+                                             labels=False)
+                      ).add_to(mapa)
+        folium.LayerControl(autoZIndex=False, collapsed=False).add_to(mapa)
         return mapa
 
 
