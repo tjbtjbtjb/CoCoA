@@ -56,7 +56,7 @@ import numpy as np
 from shapely.ops import unary_union
 
 class CocoDisplay():
-    def __init__(self):
+    def __init__(self,db=None):
         verb("Init of CocoDisplay()")
         self.colors = itertools.cycle(Paired12)
         self.coco_circle = []
@@ -64,7 +64,11 @@ class CocoDisplay():
         self.base_fig = None
         self.hover_tool = None
         self.increment = 1
-        self.info = coge.GeoInfo()
+        if db == None:
+            self.info = coge.GeoInfo()
+        else:
+            self.info = coge.GeoInfo(db.geo)
+
 
     def standardfig(self,title=None, axis_type='linear',x_axis_type='datetime'):
          return figure(title=title,plot_width=400, plot_height=300,y_axis_type=axis_type,x_axis_type=x_axis_type,

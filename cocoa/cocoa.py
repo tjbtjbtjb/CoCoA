@@ -54,7 +54,7 @@ _listwhom=['jhu',    # John Hopkins University first base, default
 _whom = _listwhom[0] # default base
 
 _db = coco.DataBase(_whom) # initialization with default
-_cocoplot = cd.CocoDisplay()
+_cocoplot = cd.CocoDisplay(_db)
 
 #_info = coge.GeoInfo() # will be the info (pseudo) private variable
 #_reg = coge.GeoRegion()

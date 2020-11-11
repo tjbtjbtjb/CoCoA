@@ -294,7 +294,8 @@ class GeoInfo():
             self._gm=gm
         else:
             self._gm=GeoManager()
-        self._grp=GeoRegion().get_pandas()
+            
+        self._grp=self._gm._gr.get_pandas()
 
     def get_list_field(self):
         """ return the list of supported additionnal fields available
