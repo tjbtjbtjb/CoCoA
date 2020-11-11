@@ -22,8 +22,6 @@ import geopandas as gpd
 from datetime import datetime as dt
 from collections import defaultdict
 
-from cocoa import covid19 as cc
-
 import bokeh
 from bokeh.io import show, output_notebook
 from bokeh.models import ColumnDataSource, ColorBar, HoverTool, Legend
@@ -56,6 +54,7 @@ from shapely.ops import unary_union
 
 class CocoDisplay():
     def __init__(self):
+    	verb("Init of CocoDisplay()")
         self.colors = itertools.cycle(Paired12)
         self.coco_circle = []
         self.coco_line = []
@@ -314,8 +313,9 @@ class CocoDisplay():
         data = data.loc[data.geometry != None]
         data['geoid'] = data.index.astype(str)
         data=data[['geoid','location','deaths','geometry']]
-        centroid=data.geometry.centroid
-        mapa = folium.Map(width=600, height=400, location=[centroid.y.mean(), centroid.x.mean()], zoom_start=2)
+        #centroid=data.geometry.centroid
+        centroid=unary_union(data.geometry).centroid
+        mapa = folium.Map(width=600, height=400, location=[centroid.y, centroid.x], zoom_start=2)
         folium.Choropleth(
         geo_data=data,
         name='Covid19cases',
