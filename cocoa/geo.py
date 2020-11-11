@@ -286,11 +286,14 @@ class GeoInfo():
     _data_geometry = pd.DataFrame()
     _data_population = pd.DataFrame()
 
-    def __init__(self):
+    def __init__(self,gm=0):
         """ __init__ member function.
         """
         verb("Init of GeoInfo()")
-        self._gm=GeoManager()
+        if gm != 0:
+            self._gm=gm
+        else:
+            self._gm=GeoManager()
         self._grp=GeoRegion().get_pandas()
 
     def get_list_field(self):

@@ -40,7 +40,10 @@ from bokeh.models import LogScale
 import bokeh.palettes
 import itertools
 import sys
+
 import cocoa.geo as coge
+from cocoa.verb import info,verb
+
 from pyproj import CRS
 #import plotly.express as px
 #import plotly.graph_objects as go
@@ -54,13 +57,14 @@ from shapely.ops import unary_union
 
 class CocoDisplay():
     def __init__(self):
-    	verb("Init of CocoDisplay()")
+        verb("Init of CocoDisplay()")
         self.colors = itertools.cycle(Paired12)
         self.coco_circle = []
         self.coco_line = []
         self.base_fig = None
         self.hover_tool = None
         self.increment = 1
+        self.info = coge.GeoInfo()
 
     def standardfig(self,title=None, axis_type='linear',x_axis_type='datetime'):
          return figure(title=title,plot_width=400, plot_height=300,y_axis_type=axis_type,x_axis_type=x_axis_type,
@@ -293,8 +297,8 @@ class CocoDisplay():
         print("deleted in descriptor object")
         del self.value
 
-    @staticmethod
-    def return_map(mypandas):
+    #@staticmethod
+    def return_map(self,mypandas):
         which_data = mypandas.columns[2]
         jhu_stuff = mypandas.loc[(mypandas.date == mypandas.date.max())]
 
@@ -302,13 +306,13 @@ class CocoDisplay():
             'location': jhu_stuff.location,
             'totcases': jhu_stuff.iloc[:, 2]
         })
-        geo = coge.GeoManager('name')
-        info = coge.GeoInfo()
+        #geo = coge.GeoManager('name')
+        #info = coge.GeoInfo()
 
-        a = info.add_field(field=['geometry'],input=jhu_stuff ,geofield='location')
+        a = self.info.add_field(field=['geometry'],input=jhu_stuff ,geofield='location')
 
 
-        data=gpd.GeoDataFrame(info.add_field(input=a,geofield='location',\
+        data=gpd.GeoDataFrame(self.info.add_field(input=a,geofield='location',\
                                   field=['country_name']),crs="EPSG:4326")
         data = data.loc[data.geometry != None]
         data['geoid'] = data.index.astype(str)
