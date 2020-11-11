@@ -27,6 +27,7 @@ import pandas as pd
 import geopandas as gpd
 import requests
 
+from cocoa.verb import verb
 from cocoa.error import *
 
 # ---------------------------------------------------------------------
@@ -55,6 +56,7 @@ class GeoManager():
         the used standard. To get the current default standard,
         see get_list_standard()[0].
         """
+        verb("Init of GeoManager()")
         self.set_standard(standard)
         self._gr=GeoRegion()
 
@@ -287,6 +289,7 @@ class GeoInfo():
     def __init__(self):
         """ __init__ member function.
         """
+        verb("Init of GeoInfo()")
         self._gm=GeoManager()
         self._grp=GeoRegion().get_pandas()
 
@@ -480,6 +483,8 @@ class GeoRegion():
 
 
         # --- get the UN M49 information and organize the data in the _region_dict
+        
+        verb("Init of GeoRegion()")
         try:
             p_m49=pd.read_html(self._source_dict["UN_M49"])[1]
         except:
