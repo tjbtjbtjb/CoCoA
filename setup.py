@@ -24,6 +24,7 @@ setup(
     install_requires=[ \
         'altair',\
         'bokeh',\
+        'branca',\
         #'collections',\   std
         #'copy',\  std
         'datetime',\
@@ -38,9 +39,11 @@ setup(
         'pandas',\
         'pycountry',\
         'pycountry_convert',\
+        'pyproj',\
         #'random',\   std
         'requests',\
         'scipy',\
+        'shapely',\
         #'sys',\   std
         #'warnings',\  std
         ],
