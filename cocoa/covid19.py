@@ -303,6 +303,7 @@ class DataBase():
         else:
             clist = (kwargs['location']).copy()
 
+        self.geo.set_standard('name')
         if self.db != 'spf' and self.db != 'opencovid19':
             clist=self.geo.to_standard(clist,output='list',interpret_region=True)
 
