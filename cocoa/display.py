@@ -42,7 +42,7 @@ import itertools
 import sys
 
 import cocoa.geo as coge
-from cocoa.tools import info,verb
+from cocoa.verb import info,verb
 
 from pyproj import CRS
 #import plotly.express as px
@@ -75,13 +75,25 @@ class CocoDisplay():
          tools=['save','box_zoom,box_select,crosshair,reset'])
 
     @staticmethod
-    def cocoa_basic_plot(babepandas, input_names_data = None,title = None,width_height = None):
-        ''' Simple bokeh plot with label + toolsbox including hover_tool'''
-        #self.base_fig = self.standardfig(title=title)
-        #standardfig = figure(plot_width=400, plot_height=300,y_axis_type='linear', x_axis_type='datetime',
-        #tools=['box_zoom,box_select,crosshair,reset'])
-        dict_filter_data = defaultdict(list)
+    def cocoa_basic_plot(babepandas, input_names_data = None,title = None, width_height = None):
+        """Create a Bokeh plot with a date axis from pandas input
 
+        Keyword arguments
+        -----------------
+        babepandas : pandas where the data is considered
+        input_names_data : variable from pandas data . If pandas is produced from cocoas get_stat method
+        the 'diff' or 'cumul' are available
+        A list of names_data can be given
+        title: title for the figure , no title by default
+        width_height : width and height of the figure,  default [400,300]
+
+
+        Note
+        -----------------
+        HoverTool is available it returns location, date and value
+        """
+
+        dict_filter_data = defaultdict(list)
         tooltips='Date: @date{%F} <br>  $name: @$name'
 
         if type(input_names_data) is None.__class__:
@@ -125,31 +137,115 @@ class CocoDisplay():
                 color=next(colors), line_width=3, legend_label=key,
                 name=i,hover_line_width=4) for key,value in dict_filter_data[i].items()]
 
-            #for i in p:
-            #    standardfig.legend.items[p.index(i)].label = 'Tarace '
-            #[print(list(standardfig.legend.items[p.index(i)].label.values())[0]) for i in p]
-
             standardfig.legend.label_text_font_size = "12px"
             panel = Panel(child=standardfig , title=axis_type)
             panels.append(panel)
             standardfig.legend.background_fill_alpha = 0.6
-            #standardfig.legend = Legend(location=(10, 30))
-            #standardfig.add_layout(legend,'right')
-            #
+
             standardfig.legend.location = "bottom_left"
-            #standardfig.legend.title_text_font_style = "bold"
-            #standardfig.legend.title_text_font_size = "5px"
+
         standardfig.xaxis.formatter = DatetimeTickFormatter(
         days=["%d %B %Y"], months=["%d %B %Y"], years=["%d %B %Y"])
         tabs = Tabs(tabs=panels)
         return tabs
 
+    @staticmethod
+    def cocoa_histo(babepandas, input_names_data = None, bins=None,title = None, width_height = None ,  date = 'last'):
+        """Create a Bokeh histogram from a pandas input
+
+        Keyword arguments
+        -----------------
+        babepandas : pandas consided
+        input_names_data : variable from pandas data. If pandas is produced from cocoa get_stat method
+        then 'diff' and 'cumul' can be also used
+        title: title for the figure , no title by default
+        width_height : width and height of the figure,  default [400,300]
+        bins : number of bins of the hitogram default 50
+        date : - default 'last'
+               Value at the last date (from database point of view) and for all the location defined in
+               the pandas will be computed
+               - date
+               Value at date (from database point of view) and for all the location defined in the pandas
+               will be computed
+               - 'all'
+               Value for all the date and for all the location will be computed
+        Note
+        -----------------
+        HoverTool is available it returns position of the middle of the bin and the value. In the case where
+        date='all' i.e all the date for all the location then location name is provided
+        """
+
+        dict_histo = defaultdict(list)
+        if bins:
+            bins = bins
+        else:
+            bins = 50
+
+        if type(input_names_data) is None.__class__:
+            print("Need variable to plot", file=sys.stderr)
+
+        if 'location' in babepandas.columns:
+            tooltips='Value at around @middle_bin : @val'
+            loc = babepandas['location'].unique()
+            shorten_loc = [ i if len(i)<15 else i.replace('-',' ').split()[0]+'...'+i.replace('-',' ').split()[-1] for i in loc]
+
+            if date == 'all':
+                tooltips='Location: @location <br> Value at around @middle_bin : @val'
+                for w in loc:
+                    histo,edges = np.histogram((babepandas.loc[babepandas['location'] == w][input_names_data]),density=False, bins=bins)
+                    dict_histo[w] = pd.DataFrame({'location':w,'val': histo,
+                       'left': edges[:-1],
+                       'right': edges[1:],
+                       'middle_bin':np.floor(edges[:-1]+(edges[1:]-edges[:-1])/2)})
+                for j in range(len(loc)):
+                    dict_histo[shorten_loc[j]] = dict_histo.pop(loc[j])
+
+            else:
+               if date == "last" :
+                   when = babepandas['date'].max()
+               else:
+                   when = date
+               val_per_country=[]
+               for w in loc:
+                   val_per_country.append(babepandas.loc[(babepandas['location'] == w) & (babepandas['date'] == when)][input_names_data].values)
+               histo,edges = np.histogram(val_per_country,density=False, bins=bins)
+               frame_histo = pd.DataFrame({'val': histo,'left': edges[:-1],'right': edges[1:],'middle_bin':np.floor(edges[:-1]+(edges[1:]-edges[:-1])/2)})
+
+        hover_tool = HoverTool(tooltips=tooltips)
+        panels = []
+        bottom=0
+        for axis_type in ["linear", "log"]:
+            if width_height:
+                plot_width  = width_height[0]
+                plot_height = width_height[1]
+            else :
+                plot_width  = 400
+                plot_height = 300
+            standardfig = figure(plot_width=plot_width, plot_height=plot_height,y_axis_type=axis_type,
+            tools=['save','box_zoom,box_select,crosshair,reset'],toolbar_location="below")
+            if title:
+                standardfig.title.text = title
+            standardfig.add_tools(hover_tool)
+            colors = itertools.cycle(Paired12)
+
+            if axis_type=="log":
+                bottom=1
+
+            if date == 'all' :
+                [standardfig.quad(source=ColumnDataSource(value),top='val', bottom=bottom, left='left', right='right',name=key,
+                    fill_color=next(colors),legend_label=key) for key,value in dict_histo.items()]
+            else:
+                standardfig.quad(source=ColumnDataSource(frame_histo),top='val', bottom=bottom, left='left', right='right',fill_color=next(colors))
+            standardfig.legend.label_text_font_size = "12px"
+
+            panel = Panel(child=standardfig , title=axis_type)
+            panels.append(panel)
+        tabs = Tabs(tabs=panels)
+        return tabs
+
+
     def DefFigInteractive(self, **kwargs):
         ''' Define interactive bokeh figure i.e with a window location selection'''
-
-        kwargs_test(kwargs,['location','option','which'],
-            'Bad args used in the DefFigInteractive() function.')
-
         if not isinstance(kwargs['location'], list):
             clist = [kwargs['location']]
         else:
@@ -352,6 +448,7 @@ class CocoDisplay():
                                              labels=False)
                       ).add_to(mapa)
         folium.LayerControl(autoZIndex=False, collapsed=False).add_to(mapa)
+
         return mapa
 
 
