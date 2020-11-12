@@ -235,7 +235,8 @@ class CocoDisplay():
                 [standardfig.quad(source=ColumnDataSource(value),top='val', bottom=bottom, left='left', right='right',name=key,
                     fill_color=next(colors),legend_label=key) for key,value in dict_histo.items()]
             else:
-                standardfig.quad(source=ColumnDataSource(frame_histo),top='val', bottom=bottom, left='left', right='right',fill_color=next(colors))
+                standardfig.quad(source=ColumnDataSource(frame_histo),top='val', bottom=bottom, left='left', right='right',
+                fill_color=next(colors),legend_label=input_names_data + ' @ ' +when)
             standardfig.legend.label_text_font_size = "12px"
 
             panel = Panel(child=standardfig , title=axis_type)
