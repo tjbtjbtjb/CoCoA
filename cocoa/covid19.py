@@ -170,7 +170,7 @@ class DataBase():
         Parse and convert CSV file to a pandas with location+date as an index
         '''
         self.database_url=url
-        
+
         kwargs_test(kwargs,['cast','separator','encoding','constraints','rename_columns','drop_field'],
             'Bad args used in the csv_to_pandas_index_location_date() function.')
 
@@ -315,8 +315,9 @@ class DataBase():
         else:
             clist = (kwargs['location']).copy()
 
-        self.geo.set_standard('name')
+
         if self.db != 'spf' and self.db != 'opencovid19':
+            self.geo.set_standard('name')
             clist=self.geo.to_standard(clist,output='list',interpret_region=True)
 
         output = kwargs.get('output','pandas')
