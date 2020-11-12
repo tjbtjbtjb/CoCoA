@@ -37,6 +37,7 @@ import cocoa.covid19 as coco
 import cocoa.geo as coge
 from cocoa.error import *
 import cocoa.display as cd
+from cocoa.tools import kwargs_test
 
 from bokeh.io import show, output_notebook
 output_notebook(hide_banner=True)
@@ -153,6 +154,9 @@ def get(**kwargs):
     output --   output format returned ( list (default), dict or pandas)
     """
     global _db,_whom
+
+    kwargs_test(kwargs,['where','which','what','whom','output'],'Bad args used in the get() function.')
+
     where=kwargs.get('where',None)
     what=kwargs.get('what',None)
     which=kwargs.get('which',None)
@@ -195,17 +199,22 @@ def plot(**kwargs):
 
     where (mandatory), what, which, whom : (see help(get))
 
-    yscale --   'lin' (linear) or 'log' (logarithmic) vertical y scale.
-                If log scale is selected null values are hidden.
+    input        -- input data to plot within the cocoa framework (e.g.
+                    after some analysis or filtering). Default is None which
+                    means that we use the basic raw data through the get
+                    function.
+                    When the 'input' keyword is set, where, what, which,
+                    whom keywords are ignored.
+                    input should be given as valid cocoa pandas dataframe.
 
-    input  --   input data to plot within the cocoa framework (e.g.
-                after some analysis or filtering). Default is None which
-                means that we use the basic raw data through the get
-                function.
-                When the 'input' keyword is set, where, what, which,
-                whom keywords are ignored.
-                input should be given as valid cocoa pandas dataframe.
+    title        -- give a title to the output plot, should be a string
+
+    width_height -- give the plot size as a list of 2 values width and height,
+                    for example [400,600]
     """
+
+    kwargs_test(kwargs,['where','which','what','whom','input','title','width_height'],
+        'Bad args used in the plot() function.')
 
     input_arg=kwargs.get('input',None)
     if input_arg != None:
@@ -214,10 +223,11 @@ def plot(**kwargs):
                 'dataframe. See help.')
         t=input_arg
     else:
-        t=get(**kwargs,output='pandas')
+        new_kwargs={key: kwargs[key] for key in kwargs.keys() & {'where','which','what','whom'}}
+        new_kwargs.update({'output':'pandas'})
+        t=get(**new_kwargs)
 
     which=kwargs.get('which',listwhich()[0])
-    
     title=kwargs.get('title',None)
     width_height=kwargs.get('width_height',None)
     
@@ -243,6 +253,10 @@ def hist(**kwargs):
                 When the 'input' keyword is set, where, what, which,
                 whom keywords are ignored.
     """
+
+    kwargs_test(kwargs,['where','which','what','whom','input','title','width_height'],
+        'Bad args used in the hist() function.')
+
     input_arg=kwargs.get('input',None)
     which=kwargs.get('which',listwhich()[0])
     if input_arg != None:
@@ -251,7 +265,9 @@ def hist(**kwargs):
                 'dataframe. See help.')
         t=input_arg
     else:
-        t=get(**kwargs,output='pandas')
+        new_kwargs={key: kwargs[key] for key in kwargs.keys() & {'where','which','what','whom'}}
+        new_kwargs.update({'output':'pandas'})
+        t=get(**new_kwargs)
 
     val=[]
     coun=[]
@@ -271,6 +287,10 @@ def map(**kwargs):
     """Create a map according to arguments and options.
     See help(hist).
     """
+
+    kwargs_test(kwargs,['where','which','what','whom','input'],
+        'Bad args used in the plot() function.')
+
     input_arg=kwargs.get('input',None)
     where=kwargs.get('where',None)
     
@@ -279,8 +299,10 @@ def map(**kwargs):
             raise CocoaTypeError('Waiting input as valid cocoa pandas '
                 'dataframe. See help.')
         t=input_arg
-    else:
-        t=get(**kwargs,output='pandas')
+    else:        
+        new_kwargs={key: kwargs[key] for key in kwargs.keys() & {'where','which','what','whom'}}
+        new_kwargs.update({'output':'pandas'})
+        t=get(**new_kwargs)
 
     return _cocoplot.return_map(t)
     

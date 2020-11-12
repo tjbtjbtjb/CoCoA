@@ -21,7 +21,7 @@ import numpy as np
 from datetime import datetime as dt
 import pandas as pd
 import sys
-from cocoa.verb import info,verb
+from cocoa.tools import info,verb,kwargs_test
 import cocoa.geo as coge
 from cocoa.error import *
 from scipy import stats as sps
@@ -170,6 +170,10 @@ class DataBase():
         Parse and convert CSV file to a pandas with location+date as an index
         '''
         self.database_url=url
+        
+        kwargs_test(kwargs,['cast','separator','encoding','constraints','rename_columns','drop_field'],
+            'Bad args used in the csv_to_pandas_index_location_date() function.')
+
         cast = kwargs.get('cast', None)
         dico_cast = {}
         if cast:
@@ -186,6 +190,7 @@ class DataBase():
         constraints = kwargs.get('constraints', None)
         rename_columns = kwargs.get('rename_columns', None)
         drop_field = kwargs.get('drop_field', None)
+
         if constraints:
             for key,val in constraints.items():
                 pandas_db = pandas_db.loc[pandas_db[key] == val]
@@ -208,6 +213,9 @@ class DataBase():
         '''
         Return a pandas in CoCoa Structure
         '''
+        kwargs_test(kwargs,['columns_skipped','columns_keeped'],
+            'Bad args used in the pandas_index_location_date_to_jhu_format() function.')
+
         columns_skipped = kwargs.get('columns_skipped', None)
         columns_keeped  = kwargs.get('columns_keeped', None)
         database_columns_not_computed = ['date','location']
@@ -298,6 +306,10 @@ class DataBase():
         return np.array(tuple(self.get_diff_days()[self.available_keys_words[0]].keys()))
 
     def get_stats(self, **kwargs):
+
+        kwargs_test(kwargs,['location','output','type','which','option',],
+            'Bad args used in the get_stats() function.')
+
         if not isinstance(kwargs['location'], list):
             clist = ([kwargs['location']]).copy()
         else:
@@ -342,6 +354,9 @@ class DataBase():
                 diffout[c, :] = yy
                 currentout[c, :] = np.cumsum(yy)
                 cumulout[c, :] = np.cumsum(np.cumsum(yy))
+        elif option != None:
+            raise CocoaKeyError('The option '+option+' is not recognized in get_stat. Error.')
+
         datos=[dt.strptime(d, '%m/%d/%y') for d in self.get_dates()]
         i = 0
         temp=[]

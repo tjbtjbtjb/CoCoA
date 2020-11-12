@@ -27,7 +27,7 @@ import pandas as pd
 import geopandas as gpd
 import requests
 
-from cocoa.verb import verb
+from cocoa.tools import verb,kwargs_test
 from cocoa.error import *
 
 # ---------------------------------------------------------------------
@@ -114,6 +114,8 @@ class GeoManager():
         interpret_region -- Boolean, default=False. If yes, the output should
                             be only 'list'.
         """
+
+        kwargs_test(kwargs,['output','db','interpret_region'],'Bad args used in the to_standard() function.')
 
         output=kwargs.get('output',self.get_list_output()[0])
         if output not in self.get_list_output():
@@ -332,6 +334,10 @@ class GeoInfo():
         """
 
         # --- kwargs analysis ---
+
+        kwargs_test(kwargs,['field','input','geofield','overload'],
+            'Bad args used in the add_field() function.')
+
         p=kwargs.get('input',None) # the panda
         if not isinstance(p,pd.DataFrame):
             raise CocoaTypeError('You should provide a valid input pandas'

@@ -42,7 +42,7 @@ import itertools
 import sys
 
 import cocoa.geo as coge
-from cocoa.verb import info,verb
+from cocoa.tools import info,verb
 
 from pyproj import CRS
 #import plotly.express as px
@@ -146,6 +146,10 @@ class CocoDisplay():
 
     def DefFigInteractive(self, **kwargs):
         ''' Define interactive bokeh figure i.e with a window location selection'''
+
+        kwargs_test(kwargs,['location','option','which'],
+            'Bad args used in the DefFigInteractive() function.')
+
         if not isinstance(kwargs['location'], list):
             clist = [kwargs['location']]
         else:
