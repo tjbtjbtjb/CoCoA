@@ -47,7 +47,9 @@ from cocoa.tools import info,verb
 from pyproj import CRS
 #import plotly.express as px
 #import plotly.graph_objects as go
-from branca.colormap import LinearColormap
+#from branca.colormap import LinearColormap
+import branca.colormap
+
 import folium
 import json
 from geopy.geocoders import Nominatim
@@ -150,6 +152,37 @@ class CocoDisplay():
         return tabs
 
     @staticmethod
+    def min_max_range(a_min,a_max):
+        """Return a cleverly rounded min and max giving raw min and raw max of data.
+        Usefull for hist range and colormap
+        """
+        if a_min!=0:
+            min_p=math.floor(math.log10(math.fabs(a_min)))   # power
+            min_r=math.floor(a_min/10**(min_p-1))*10**(min_p-1) # min range rounded
+        else:
+            min_r=0
+               
+        if a_max!=0:
+            max_p=math.floor(math.log10(math.fabs(a_max)))
+            max_r=math.ceil(a_max/10**(max_p-1))*10**(max_p-1)
+        else:
+            max_r=0
+
+        if min_r==max_r:
+            if min_r==0:
+                min_r=-1
+                max_r=1
+                k=0
+            elif max_r>0:
+                k=0.1
+            else:
+                k=-0.1
+            max_r=(1+k)*max_r
+            min_r=(1-k)*min_r
+
+        return (min_r,max_r)
+
+    @staticmethod
     def cocoa_histo(babepandas, input_names_data = None, bins=None,title = None, width_height = None ,  date = 'last'):
         """Create a Bokeh histogram from a pandas input
 
@@ -176,10 +209,6 @@ class CocoDisplay():
         """
 
         dict_histo = defaultdict(list)
-        if bins:
-            bins = bins
-        else:
-            bins = 50
 
         if type(input_names_data) is None.__class__:
             print("Need variable to plot", file=sys.stderr)
@@ -190,6 +219,11 @@ class CocoDisplay():
             shorten_loc = [ i if len(i)<15 else i.replace('-',' ').split()[0]+'...'+i.replace('-',' ').split()[-1] for i in loc]
 
             if date == 'all':
+                if bins:
+                    bins = bins
+                else:
+                    bins = 50
+
                 tooltips='Location: @location <br> Value at around @middle_bin : @val'
                 for w in loc:
                     histo,edges = np.histogram((babepandas.loc[babepandas['location'] == w][input_names_data]),density=False, bins=bins)
@@ -212,7 +246,18 @@ class CocoDisplay():
                    #val_per_country.append(val)
                    val_per_country[w]=val
 
-               histo,edges = np.histogram(list(val_per_country.values()),density=False, bins=bins)
+               l_data=list(val_per_country.values())
+
+               # good nb of bins
+               l_n=len(l_data)
+               if bins:
+                  bins = bins
+               else:
+                  bins = math.ceil(2*l_n**(1./3))# Rice rule
+                  if bins<8:
+                     bins=8
+
+               histo,edges = np.histogram(l_data,density=False, bins=bins,range=CocoDisplay.min_max_range(np.min(l_data),np.max(l_data)))
 
                contributors=[]
                for i,j in zip(edges[:-1],edges[1:]):
@@ -452,11 +497,18 @@ class CocoDisplay():
         fill_color='PuRd',
         fill_opacity=0.7,
         line_opacity=0.2,
+        scale=(0,100),
         line_color='white',
         line_weight=0,
         highlight=False,
         smooth_factor=1.0,
         legend_name= 'Covid19 cases').add_to(mapa)
+
+        min_col,max_col=CocoDisplay.min_max_range(min(data.deaths),max(data.deaths))
+        colormap = branca.colormap.linear.YlOrRd_09.scale(min_col, max_col)
+#        colormap = colormap.to_step(index=[0, 1000, 3000, 5000, 8500])
+#        colormap.caption = 'Incidents of Crime in Victoria (year ending June 2018)'#
+        colormap.add_to(mapa)
 
         folium.GeoJson(data,
                name="Cases",
