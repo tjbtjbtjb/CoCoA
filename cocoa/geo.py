@@ -214,6 +214,7 @@ class GeoManager():
         for specific databases
         """
         translation_dict={}
+        # Caution : keys need to be in title mode, i.e. first letter capitalized
         if db=='jhu':
             translation_dict.update({\
                 "Congo (Brazzaville)":"Republic of the Congo",\
@@ -249,9 +250,9 @@ class GeoManager():
                 } )
         elif db=='owid':
             translation_dict.update({\
-                    "Bonaire Sint Eustatius and Saba":"BES",\
+                    "Bonaire Sint Eustatius And Saba":"BES",\
                     "Cape Verde":"CPV",\
-                    "Democratic Republic of Congo":"COD",\
+                    "Democratic Republic Of Congo":"COD",\
                     "Faeroe Islands":"FRO",\
                     "Laos":"LAO",\
                     "South Korea":"KOR",\
