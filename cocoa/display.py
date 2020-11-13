@@ -42,7 +42,7 @@ import itertools
 import sys
 
 import cocoa.geo as coge
-from cocoa.verb import info,verb
+from cocoa.tools import info,verb
 
 from pyproj import CRS
 #import plotly.express as px
