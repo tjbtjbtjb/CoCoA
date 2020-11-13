@@ -201,15 +201,27 @@ class CocoDisplay():
                     dict_histo[shorten_loc[j]] = dict_histo.pop(loc[j])
 
             else:
+               tooltips = 'Contributors : @contributors'
                if date == "last" :
                    when = babepandas['date'].max()
                else:
                    when = date
-               val_per_country=[]
+               val_per_country = defaultdict(list)
                for w in loc:
-                   val_per_country.append(babepandas.loc[(babepandas['location'] == w) & (babepandas['date'] == when)][input_names_data].values)
-               histo,edges = np.histogram(val_per_country,density=False, bins=bins)
-               frame_histo = pd.DataFrame({'val': histo,'left': edges[:-1],'right': edges[1:],'middle_bin':np.floor(edges[:-1]+(edges[1:]-edges[:-1])/2)})
+                   val = babepandas.loc[(babepandas['location'] == w) & (babepandas['date'] == when)][input_names_data].values
+                   #val_per_country.append(val)
+                   val_per_country[w]=val
+
+               histo,edges = np.histogram(list(val_per_country.values()),density=False, bins=bins)
+
+               contributors=[]
+               for i,j in zip(edges[:-1],edges[1:]):
+                   res = [key for key, val in filter(lambda sub: int(sub[1]) >= i and
+                                   int(sub[1]) <= j, val_per_country.items())]
+                   contributors.append(res)
+               frame_histo = pd.DataFrame({'val': histo,'left': edges[:-1],'right': edges[1:],
+               'middle_bin':np.floor(edges[:-1]+(edges[1:]-edges[:-1])/2),
+               'contributors':contributors})
 
         hover_tool = HoverTool(tooltips=tooltips)
         panels = []
@@ -239,7 +251,7 @@ class CocoDisplay():
                     fill_color=next(colors),legend_label=key) for key,value in dict_histo.items()]
             else:
                 p=standardfig.quad(source=ColumnDataSource(frame_histo),top='val', bottom=bottom, left='left', right='right',
-                fill_color=next(colors),legend_label=input_names_data + ' @ ' + str(when))
+                fill_color=next(colors),legend_label=input_names_data + ' @ ' + when.strftime('%d-%m-%Y'))
 
             #legend = Legend(items=[(list(standardfig.legend.items[p.index(i)].label.values())[0],[i]) for i in p],location="center")
             #standardfig.add_layout(legend,'right')
