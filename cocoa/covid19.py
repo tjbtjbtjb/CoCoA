@@ -361,6 +361,9 @@ class DataBase():
         i = 0
         temp=[]
         for coun in clist:
+            if len(coun)==0: 
+                continue
+
             if len(currentout[i]):
                 val1,val2,val3 = currentout[i], cumulout[i], diffout[i]
 
@@ -391,6 +394,9 @@ class DataBase():
 
         #if len(clist) == 1 :
         #    temp[0] = temp[0].drop(columns=['location'])
+
+        if temp==[]:
+            raise CocoaWhereError('No valid country available')
 
         return pd.concat(temp)
 
