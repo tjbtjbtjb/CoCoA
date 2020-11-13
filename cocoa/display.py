@@ -449,7 +449,7 @@ class CocoDisplay():
         data=data,
         columns=['geoid', 'deaths'],
         key_on='feature.id',
-        fill_color='YlOrRd',
+        fill_color='PuRd',
         fill_opacity=0.7,
         line_opacity=0.2,
         line_color='white',
@@ -461,7 +461,7 @@ class CocoDisplay():
         folium.GeoJson(data,
                name="Cases",
                style_function=lambda x: {'color':'transparent','fillColor':'transparent','weight':0},
-               highlight_function=lambda x: {'weight':3, 'color':'blue'},
+               highlight_function=lambda x: {'weight':2, 'color':'green'},
                tooltip=folium.GeoJsonTooltip(fields=['location','deaths'],
                                              aliases = ['country','totcases'],
                                              labels=False)
