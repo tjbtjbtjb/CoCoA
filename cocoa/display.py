@@ -159,17 +159,17 @@ class CocoDisplay():
         min_p=0
         max_p=0
         if a_min!=0:
-            min_p=math.floor(math.log10(math.fabs(a_min)))   # power 
+            min_p=math.floor(math.log10(math.fabs(a_min)))   # power
         if a_max!=0:
             max_p=math.floor(math.log10(math.fabs(a_max)))
 
         p=max(min_p,max_p)
-        
+
         if a_min!=0:
             min_r=math.floor(a_min/10**(p-1))*10**(p-1) # min range rounded
         else:
             min_r=0
-        
+
         if a_max!=0:
             max_r=math.ceil(a_max/10**(p-1))*10**(p-1)
 
@@ -250,7 +250,8 @@ class CocoDisplay():
                    val = babepandas.loc[(babepandas['location'] == w) & (babepandas['date'] == when)][input_names_data].values
                    #val_per_country.append(val)
                    val_per_country[w]=val
-
+               if type(when) != str:
+                   when = when.strftime('%d-%m-%Y')
                l_data=list(val_per_country.values())
 
                # good nb of bins
@@ -301,7 +302,7 @@ class CocoDisplay():
                     fill_color=next(colors),legend_label=key) for key,value in dict_histo.items()]
             else:
                 p=standardfig.quad(source=ColumnDataSource(frame_histo),top='val', bottom=bottom, left='left', right='right',
-                fill_color=next(colors),legend_label=input_names_data + ' @ ' + when.strftime('%d-%m-%Y'))
+                fill_color=next(colors),legend_label=input_names_data + ' @ ' + when)
 
             #legend = Legend(items=[(list(standardfig.legend.items[p.index(i)].label.values())[0],[i]) for i in p],location="center")
             #standardfig.add_layout(legend,'right')
