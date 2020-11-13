@@ -490,7 +490,7 @@ class CocoDisplay():
                                   field=['country_name']),crs="EPSG:4326")
         data = data.loc[data.geometry != None]
         data['geoid'] = data.index.astype(str)
-        data=data[['geoid','location','deaths','geometry']]
+        data=data[['geoid','location',which_data,'geometry']]
         #centroid=data.geometry.centroid
         centroid=unary_union(data.geometry).centroid
         mapa = folium.Map(location=[centroid.y, centroid.x], zoom_start=2)
@@ -498,7 +498,7 @@ class CocoDisplay():
         geo_data=data,
         name='Covid19cases',
         data=data,
-        columns=['geoid', 'deaths'],
+        columns=['geoid', which_data],
         key_on='feature.id',
         fill_color='PuRd',
         fill_opacity=0.7,
@@ -510,7 +510,7 @@ class CocoDisplay():
         smooth_factor=1.0,
         legend_name= 'Covid19 cases').add_to(mapa)
 
-        min_col,max_col=CocoDisplay.min_max_range(min(data.deaths),max(data.deaths))
+        min_col,max_col=CocoDisplay.min_max_range(min(data[which_data]),max(data[which_data]))
         colormap = branca.colormap.linear.YlOrRd_09.scale(min_col, max_col)
 #        colormap = colormap.to_step(index=[0, 1000, 3000, 5000, 8500])
 #        colormap.caption = 'Incidents of Crime in Victoria (year ending June 2018)'#
@@ -520,7 +520,7 @@ class CocoDisplay():
                name="Cases",
                style_function=lambda x: {'color':'transparent','fillColor':'transparent','weight':0},
                highlight_function=lambda x: {'weight':2, 'color':'green'},
-               tooltip=folium.GeoJsonTooltip(fields=['location','deaths'],
+               tooltip=folium.GeoJsonTooltip(fields=['location',which_data],
                                              aliases = ['country','totcases'],
                                              labels=False)
                       ).add_to(mapa)
