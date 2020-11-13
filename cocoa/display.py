@@ -214,6 +214,8 @@ class CocoDisplay():
         hover_tool = HoverTool(tooltips=tooltips)
         panels = []
         bottom=0
+
+
         for axis_type in ["linear", "log"]:
             if width_height:
                 plot_width  = width_height[0]
@@ -223,6 +225,7 @@ class CocoDisplay():
                 plot_height = 300
             standardfig = figure(plot_width=plot_width, plot_height=plot_height,y_axis_type=axis_type,
             tools=['save','box_zoom,box_select,crosshair,reset'],toolbar_location="below")
+
             if title:
                 standardfig.title.text = title
             standardfig.add_tools(hover_tool)
@@ -232,11 +235,14 @@ class CocoDisplay():
                 bottom=1
 
             if date == 'all' :
-                [standardfig.quad(source=ColumnDataSource(value),top='val', bottom=bottom, left='left', right='right',name=key,
+                p=[standardfig.quad(source=ColumnDataSource(value),top='val', bottom=bottom, left='left', right='right',name=key,
                     fill_color=next(colors),legend_label=key) for key,value in dict_histo.items()]
             else:
-                standardfig.quad(source=ColumnDataSource(frame_histo),top='val', bottom=bottom, left='left', right='right',
-                fill_color=next(colors),legend_label=input_names_data + ' @ ' +when)
+                p=standardfig.quad(source=ColumnDataSource(frame_histo),top='val', bottom=bottom, left='left', right='right',
+                fill_color=next(colors),legend_label=input_names_data + ' @ ' + str(when))
+
+            #legend = Legend(items=[(list(standardfig.legend.items[p.index(i)].label.values())[0],[i]) for i in p],location="center")
+            #standardfig.add_layout(legend,'right')
             standardfig.legend.label_text_font_size = "12px"
 
             panel = Panel(child=standardfig , title=axis_type)
@@ -424,7 +430,7 @@ class CocoDisplay():
         data=data[['geoid','location','deaths','geometry']]
         #centroid=data.geometry.centroid
         centroid=unary_union(data.geometry).centroid
-        mapa = folium.Map(width=600, height=400, location=[centroid.y, centroid.x], zoom_start=2)
+        mapa = folium.Map(location=[centroid.y, centroid.x], zoom_start=2)
         folium.Choropleth(
         geo_data=data,
         name='Covid19cases',
