@@ -1,6 +1,6 @@
-![CoCoA Logo](/misc/cocoa_640_320.png)
+![CoCoA Logo](/docs/fig/cocoa_640_320.png)
 
-This is the <img src="/misc/UK.png" height="14px" alt="UK flag" /> version of the *Readme*. You can read the <a href="README.FR.md"><img src="/misc/FR.png" height="14px" alt="FR flag" /> version</a>.
+This is the <img src="/docs/fig/UK.png" height="14px" alt="UK flag" /> version of the *Readme*. You can read the <a href="README.FR.md"><img src="/docs/fig/FR.png" height="14px" alt="FR flag" /> version</a>.
 
 April/October 2020
 
@@ -24,7 +24,7 @@ cc.map(where=['European Union','United kingdom'])
 
 produce on the one hand a temporal serie plot of Covid confirmed cases for two countries (France and Italy as an example), or the deaths map with the European Union and United Kingdom.
 
-<img src="/misc/cocoa_plot_example.png" height="180px"/> <img src="/misc/cocoa_map_example.png" height="180px" />
+<img src="/docs/fig/cocoa_plot_example.png" height="180px"/> <img src="/docs/fig/cocoa_map_example.png" height="180px" />
 
 CoCoA is made to work :
 - locally (local install of Python™, for example with [`Spyder`](https://www.spyder-ide.org/) )
