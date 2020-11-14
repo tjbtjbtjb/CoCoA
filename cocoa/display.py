@@ -159,17 +159,17 @@ class CocoDisplay():
         min_p=0
         max_p=0
         if a_min!=0:
-            min_p=math.floor(math.log10(math.fabs(a_min)))   # power 
+            min_p=math.floor(math.log10(math.fabs(a_min)))   # power
         if a_max!=0:
             max_p=math.floor(math.log10(math.fabs(a_max)))
 
         p=max(min_p,max_p)
-        
+
         if a_min!=0:
             min_r=math.floor(a_min/10**(p-1))*10**(p-1) # min range rounded
         else:
             min_r=0
-        
+
         if a_max!=0:
             max_r=math.ceil(a_max/10**(p-1))*10**(p-1)
 
@@ -250,7 +250,8 @@ class CocoDisplay():
                    val = babepandas.loc[(babepandas['location'] == w) & (babepandas['date'] == when)][input_names_data].values
                    #val_per_country.append(val)
                    val_per_country[w]=val
-
+               if type(when) != str:
+                   when = when.strftime('%d-%m-%Y')
                l_data=list(val_per_country.values())
 
                # good nb of bins
@@ -301,7 +302,7 @@ class CocoDisplay():
                     fill_color=next(colors),legend_label=key) for key,value in dict_histo.items()]
             else:
                 p=standardfig.quad(source=ColumnDataSource(frame_histo),top='val', bottom=bottom, left='left', right='right',
-                fill_color=next(colors),legend_label=input_names_data + ' @ ' + when.strftime('%d-%m-%Y'))
+                fill_color=next(colors),legend_label=input_names_data + ' @ ' + when)
 
             #legend = Legend(items=[(list(standardfig.legend.items[p.index(i)].label.values())[0],[i]) for i in p],location="center")
             #standardfig.add_layout(legend,'right')
@@ -489,7 +490,7 @@ class CocoDisplay():
                                   field=['country_name']),crs="EPSG:4326")
         data = data.loc[data.geometry != None]
         data['geoid'] = data.index.astype(str)
-        data=data[['geoid','location','deaths','geometry']]
+        data=data[['geoid','location',which_data,'geometry']]
         #centroid=data.geometry.centroid
         centroid=unary_union(data.geometry).centroid
         mapa = folium.Map(location=[centroid.y, centroid.x], zoom_start=2)
@@ -497,7 +498,7 @@ class CocoDisplay():
         geo_data=data,
         name='Covid19cases',
         data=data,
-        columns=['geoid', 'deaths'],
+        columns=['geoid', which_data],
         key_on='feature.id',
         fill_color='PuRd',
         fill_opacity=0.7,
@@ -509,7 +510,7 @@ class CocoDisplay():
         smooth_factor=1.0,
         legend_name= 'Covid19 cases').add_to(mapa)
 
-        min_col,max_col=CocoDisplay.min_max_range(min(data.deaths),max(data.deaths))
+        min_col,max_col=CocoDisplay.min_max_range(min(data[which_data]),max(data[which_data]))
         colormap = branca.colormap.linear.YlOrRd_09.scale(min_col, max_col)
 #        colormap = colormap.to_step(index=[0, 1000, 3000, 5000, 8500])
 #        colormap.caption = 'Incidents of Crime in Victoria (year ending June 2018)'#
@@ -519,7 +520,7 @@ class CocoDisplay():
                name="Cases",
                style_function=lambda x: {'color':'transparent','fillColor':'transparent','weight':0},
                highlight_function=lambda x: {'weight':2, 'color':'green'},
-               tooltip=folium.GeoJsonTooltip(fields=['location','deaths'],
+               tooltip=folium.GeoJsonTooltip(fields=['location',which_data],
                                              aliases = ['country','totcases'],
                                              labels=False)
                       ).add_to(mapa)
