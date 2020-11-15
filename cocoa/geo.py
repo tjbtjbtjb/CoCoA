@@ -508,7 +508,14 @@ class GeoRegion():
         p_m49.set_index('code')
 
         self._region_dict.update(p_m49.to_dict('split')['data'])
-        self._region_dict.update({"UE":"European Union"})  # add UE for other analysis
+        self._region_dict.update({  "UE":"European Union",
+                                    "G7":"G7",
+                                    "G8":"G8",
+                                    "G20":"G20",
+                                    "OECD":"Oecd",
+                                    "G77":"G77",
+                                    })  # add UE for other analysis
+
 
         # --- get the UnitedNation GeoScheme and organize the data
         try:
@@ -556,6 +563,36 @@ class GeoRegion():
                         'ESP','FIN','FRA','GRC','HRV','HUN','IRL','ITA',\
                         'LTU','LUX','LVA','MLT','NLD','POL','PRT','ROU',\
                         'SWE','SVN','SVK']
+        elif region=='G7':
+            clist=['DEU','CAN','USA','FRA','ITA','JAP','GBR']
+        elif region=='G8':
+            clist=['DEU','CAN','USA','FRA','ITA','JAP','GBR','RUS']
+        elif region=='G20':
+            clist=['ZAF','SAU','ARG','AUS','BRA','CAN','CHN','KOR','USA',\
+                'IND','IDN','JAP','MEX','GBR','RUS','TUR',\
+                'AUT','BEL','BGR','CYP','CZE','DEU','DNK','EST',\
+                'ESP','FIN','FRA','GRC','HRV','HUN','IRL','ITA',\
+                'LTU','LUX','LVA','MLT','NLD','POL','PRT','ROU',\
+                'SWE','SVN','SVK']
+        elif region=='Oecd': # OCDE in french
+            clist=['DEU','AUS','AUT','BEL','CAN','CHL','COL','KOR','DNK',\
+                'ESP','EST','USA','FIN','FRA','GRC','HUN','IRL','ISL','ISR',\
+                'ITA','JAP','LVA','LTU','LUX','MEX','NOR','NZL','NLD','POL',\
+                'PRT','SVK','SVN','SWE','CHE','GBR','CZE','TUR']
+        elif region=='G77':
+            clist=['AFG','DZA','AGO','ATG','ARG','AZE','BHS','BHR','BGD','BRB','BLZ',
+                'BEN','BTN','BOL','BWA','BRA','BRN','BFA','BDI','CPV','KHM','CMR',
+                'CAF','TCD','CHL','CHN','COL','COM','COG','CRI','CIV','CUB','PRK',
+                'COD','DJI','DMA','DOM','ECU','EGY','SLV','GNQ','ERI','SWZ','ETH',
+                'FJI','GAB','GMB','GHA','GRD','GTM','GIN','GNB','GUY','HTI','HND',
+                'IND','IDN','IRN','IRQ','JAM','JOR','KEN','KIR','KWT','LAO','LBN',
+                'LSO','LBR','LBY','MDG','MWI','MYS','MDV','MLI','MHL','MRT','MUS',
+                'FSM','MNG','MAR','MOZ','MMR','NAM','NRU','NPL','NIC','NER','NGA',
+                'OMN','PAK','PAN','PNG','PRY','PER','PHL','QAT','RWA','KNA','LCA',
+                'VCT','WSM','STP','SAU','SEN','SYC','SLE','SGP','SLB','SOM','ZAF',
+                'SSD','LKA','PSE','SDN','SUR','SYR','TJK','THA','TLS','TGO','TON',
+                'TTO','TUN','TKM','UGA','ARE','TZA','URY','VUT','VEN','VNM','YEM',
+                'ZMB','ZWE']
         else:
             clist=self._p_gs[self._p_gs['region_name']==region]['iso3'].to_list()
 
