@@ -502,6 +502,7 @@ class CocoDisplay():
         data['geoid'] = data.index.astype(str)
 
         data=data[['geoid','location',which_data,'geometry']]
+        data[which_data] = round(data[which_data])
         data = data.set_index('geoid')
 
 
