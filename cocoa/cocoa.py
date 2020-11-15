@@ -304,8 +304,12 @@ def map(**kwargs):
     what=kwargs.get('what',None)
     if what:
         which_init = which
-        which = what
+        if what == 'daily' or  what == 'diff':
+            which = 'diff'
         if what == 'cumul' and _whom == 'jhu':
             which = which_init
+        if  what == 'weekly':
+            t['weekly'] = t['diff'].rolling(7).mean()
+            which = 'weekly'
 
     return _cocoplot.return_map(t,which)
