@@ -291,7 +291,7 @@ class CocoDisplay():
                 plot_height = 300
             standardfig = figure(plot_width=plot_width, plot_height=plot_height,y_axis_type=axis_type,
             tools=['save','box_zoom,box_select,crosshair,reset'],toolbar_location="below")
-
+            standardfig.xaxis[0].formatter = PrintfTickFormatter(format="%4.2e")
             if title:
                 standardfig.title.text = title
             standardfig.add_tools(hover_tool)
@@ -299,13 +299,17 @@ class CocoDisplay():
 
             if axis_type=="log":
                 bottom=1
-
+            label = []
             if date == 'all' :
                 p=[standardfig.quad(source=ColumnDataSource(value),top='val', bottom=bottom, left='left', right='right',name=key,
                     fill_color=next(colors),legend_label=key) for key,value in dict_histo.items()]
             else:
+                if input_names_data == babepandas.columns[2]:
+                    label = input_names_data + ' @ ' + when
+                else:
+                    label = babepandas.columns[2] + ' (' +input_names_data + ') @ ' + when
                 p=standardfig.quad(source=ColumnDataSource(frame_histo),top='val', bottom=bottom, left='left', right='right',
-                fill_color=next(colors),legend_label=input_names_data + ' @ ' + when)
+                fill_color=next(colors),legend_label=label)
 
             #legend = Legend(items=[(list(standardfig.legend.items[p.index(i)].label.values())[0],[i]) for i in p],location="center")
             #standardfig.add_layout(legend,'right')

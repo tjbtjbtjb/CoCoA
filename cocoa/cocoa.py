@@ -256,7 +256,7 @@ def hist(**kwargs):
                 When the 'input' keyword is set, where, what, which,
                 whom keywords are ignored.
     """
-    kwargs_test(kwargs,['where','what','which','whom','input'],
+    kwargs_test(kwargs,['where','what','which','whom','input','bins','width_height'],
             'Bad args used in the cocoa.hist() function.')
 
     input_arg=kwargs.get('input',None)
@@ -272,7 +272,18 @@ def hist(**kwargs):
     bins=kwargs.get('bins',None)
     title=kwargs.get('title',None)
     width_height=kwargs.get('width_height',None)
+    what=kwargs.get('what',None)
     date=kwargs.get('date','last')
+
+    if type(what) is not None.__class__:
+        which_init = which
+        if what == 'daily' or  what == 'diff':
+            which = 'diff'
+        if what == 'cumul' and _whom == 'jhu':
+            which = which_init
+        if  what == 'weekly':
+            t['weekly'] = t['diff'].rolling(7).mean()
+            which = 'weekly'
 
     fig=_cocoplot.cocoa_histo(t,which,bins,title,width_height,date)
 
