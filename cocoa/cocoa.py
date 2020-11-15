@@ -153,7 +153,7 @@ def get(**kwargs):
 
     output --   output format returned ( list (default), dict or pandas)
     """
-    kwargs_test(kwargs,['where','what','which','whom','output'],
+    kwargs_test(kwargs,['where','what','which','whom','output','width_height'],
             'Bad args used in the cocoa.get() function.')
 
     global _db,_whom
@@ -207,7 +207,7 @@ def plot(**kwargs):
                 whom keywords are ignored.
                 input should be given as valid cocoa pandas dataframe.
     """
-    kwargs_test(kwargs,['where','what','which','whom','input'],
+    kwargs_test(kwargs,['where','what','which','whom','input','width_height'],
             'Bad args used in the cocoa.plot() function.')
 
     input_arg=kwargs.get('input',None)
@@ -227,10 +227,13 @@ def plot(**kwargs):
 
     if what:
         which_init = which
-        which = what
+        if what == 'daily' or  what == 'diff':
+            which = 'diff'
         if what == 'cumul' and _whom == 'jhu':
             which = which_init
-
+        if  what == 'weekly':
+            t['weekly'] = t['diff'].rolling(7).mean()
+            which = 'weekly'
     fig = _cocoplot.cocoa_basic_plot(t,which,title,width_height)
     show(fig)
 
