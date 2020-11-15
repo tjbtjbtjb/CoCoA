@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import geopandas as gpd
 
+from cocoa.tools import kwargs_test
 import cocoa.covid19 as coco
 import cocoa.geo as coge
 from cocoa.error import *
