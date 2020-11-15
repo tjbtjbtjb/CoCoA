@@ -37,6 +37,8 @@ from bokeh.models import Label, LabelSet
 from bokeh.models import ColumnDataSource, Grid, Line, LinearAxis, Plot
 from bokeh.models import DataRange1d
 from bokeh.models import LogScale
+from bokeh.models import PrintfTickFormatter
+from bokeh.models import PolyDrawTool
 import bokeh.palettes
 import itertools
 import sys
@@ -128,8 +130,9 @@ class CocoDisplay():
             else :
                 plot_width  = 400
                 plot_height = 300
-            standardfig = figure(plot_width=plot_width, plot_height=plot_height,y_axis_type=axis_type, x_axis_type='datetime',
+                standardfig = figure(plot_width=plot_width, plot_height=plot_height,y_axis_type=axis_type, x_axis_type='datetime',
             tools=['save','box_zoom,box_select,crosshair,reset'],toolbar_location="below")
+                standardfig.yaxis[0].formatter = PrintfTickFormatter(format="%4.2e")
             if title:
                 standardfig.title.text = title
             standardfig.add_tools(hover_tool)
@@ -475,26 +478,57 @@ class CocoDisplay():
     def return_map(self,mypandas):
         which_data = mypandas.columns[2]
         jhu_stuff = mypandas.loc[(mypandas.date == mypandas.date.max())]
-
         pandas_data = pd.DataFrame({
             'location': jhu_stuff.location,
             'totcases': jhu_stuff.iloc[:, 2]
         })
-        #geo = coge.GeoManager('name')
-        #info = coge.GeoInfo()
 
         a = self.info.add_field(field=['geometry'],input=jhu_stuff ,geofield='location')
-
 
         data=gpd.GeoDataFrame(self.info.add_field(input=a,geofield='location',\
                                   field=['country_name']),crs="EPSG:4326")
         data = data.loc[data.geometry != None]
         data['geoid'] = data.index.astype(str)
+
+
         data=data[['geoid','location',which_data,'geometry']]
-        #centroid=data.geometry.centroid
+        data = data.set_index('geoid')
+
+
         centroid=unary_union(data.geometry).centroid
+        #print(min(data[which_data]),max(data[which_data]))
+        #print([i for i in data[which_data] if i>0])
+        min_col,max_col=CocoDisplay.min_max_range(max(data[which_data]/1000.),max(data[which_data]))
+        colormap = branca.colormap.linear.RdPu_09.scale(min_col, max_col)
+        #colormap = (colormap.to_step(n=len(data[which_data]),method='log'))
+        colormap.caption = 'Covid-19 cases : ' + which_data
+
         mapa = folium.Map(location=[centroid.y, centroid.x], zoom_start=2)
-        folium.Choropleth(
+        #tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png',
+        #attr = "IGN")
+
+        folium.GeoJson(
+            data,
+            style_function=lambda x:
+            {
+                'fillColor': '#ffffffff' if x['properties'][which_data] < max(data[which_data]/1000.) else
+                colormap(x['properties'][which_data]),
+                'fillOpacity': 0.8,
+                'color' : None,
+            },
+            name="Cases",
+            highlight_function=lambda x: {'weight':2, 'color':'green'},
+            tooltip=folium.GeoJsonTooltip(fields=['location',which_data],
+                                              aliases = ['country','totcases'],
+                                              labels=False),
+
+
+        ).add_to(mapa)
+        colormap.add_to(mapa)
+        #folium.LayerControl(autoZIndex=False, collapsed=False).add_to(mapa)
+        return mapa
+'''
+        choro = folium.Choropleth(
         geo_data=data,
         name='Covid19cases',
         data=data,
@@ -503,19 +537,12 @@ class CocoDisplay():
         fill_color='PuRd',
         fill_opacity=0.7,
         line_opacity=0.2,
-        scale=(0,100),
+        #scale=(0,100),
         line_color='white',
         line_weight=0,
         highlight=False,
-        smooth_factor=1.0,
-        legend_name= 'Covid19 cases').add_to(mapa)
-
-        min_col,max_col=CocoDisplay.min_max_range(min(data[which_data]),max(data[which_data]))
-        colormap = branca.colormap.linear.YlOrRd_09.scale(min_col, max_col)
-#        colormap = colormap.to_step(index=[0, 1000, 3000, 5000, 8500])
-#        colormap.caption = 'Incidents of Crime in Victoria (year ending June 2018)'#
-        colormap.add_to(mapa)
-
+        smooth_factor=1.0).add_to(mapa)
+        mapa.add_child(colormap)
         folium.GeoJson(data,
                name="Cases",
                style_function=lambda x: {'color':'transparent','fillColor':'transparent','weight':0},
@@ -524,9 +551,8 @@ class CocoDisplay():
                                              aliases = ['country','totcases'],
                                              labels=False)
                       ).add_to(mapa)
-        folium.LayerControl(autoZIndex=False, collapsed=False).add_to(mapa)
+'''
 
-        return mapa
 
 
 def resume_pandas(self,pd):

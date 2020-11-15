@@ -220,9 +220,16 @@ def plot(**kwargs):
         t=get(**kwargs,output='pandas')
 
     which=kwargs.get('which',listwhich()[0])
+    what=kwargs.get('what',None)
 
     title=kwargs.get('title',None)
     width_height=kwargs.get('width_height',None)
+
+    if what:
+        which_init = which
+        which = what
+        if what == 'cumul' and _whom == 'jhu':
+            which = which_init
 
     fig = _cocoplot.cocoa_basic_plot(t,which,title,width_height)
     show(fig)
