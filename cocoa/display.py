@@ -476,10 +476,17 @@ class CocoDisplay():
 
     #@staticmethod
     def return_map(self,mypandas,which_data = None):
+        label , what ='',''
         if type(which_data) is None.__class__:
             which_data = mypandas.columns[2]
+            label = which_data
         else:
             which_data = which_data
+            if which_data == 'diff':
+               what = 'day to day diffence'
+            else:
+               what = 'cumulative sum'
+            label = mypandas.columns[2] + ' (' + what +  ')'
 
         jhu_stuff = mypandas.loc[(mypandas.date == mypandas.date.max())]
 
@@ -500,7 +507,7 @@ class CocoDisplay():
         min_col,max_col=CocoDisplay.min_max_range(max(data[which_data]/1000.),max(data[which_data]))
         colormap = branca.colormap.linear.RdPu_09.scale(min_col, max_col)
         #colormap = (colormap.to_step(n=len(data[which_data]),method='log'))
-        colormap.caption = 'Covid-19 cases : ' + which_data
+        colormap.caption = 'Covid-19 cases : ' + label
 
         mapa = folium.Map(location=[centroid.y, centroid.x], zoom_start=2)
         #tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png',
