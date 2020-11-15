@@ -130,9 +130,9 @@ class CocoDisplay():
             else :
                 plot_width  = 400
                 plot_height = 300
-                standardfig = figure(plot_width=plot_width, plot_height=plot_height,y_axis_type=axis_type, x_axis_type='datetime',
+            standardfig = figure(plot_width=plot_width, plot_height=plot_height,y_axis_type=axis_type, x_axis_type='datetime',
             tools=['save','box_zoom,box_select,crosshair,reset'],toolbar_location="below")
-                standardfig.yaxis[0].formatter = PrintfTickFormatter(format="%4.2e")
+            standardfig.yaxis[0].formatter = PrintfTickFormatter(format="%4.2e")
             if title:
                 standardfig.title.text = title
             standardfig.add_tools(hover_tool)
