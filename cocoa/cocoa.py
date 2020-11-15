@@ -152,6 +152,9 @@ def get(**kwargs):
 
     output --   output format returned ( list (default), dict or pandas)
     """
+    kwargs_test(kwargs,['where','what','which','whom','output'],
+            'Bad args used in the cocoa.get() function.')
+
     global _db,_whom
     where=kwargs.get('where',None)
     what=kwargs.get('what',None)
@@ -195,9 +198,6 @@ def plot(**kwargs):
 
     where (mandatory), what, which, whom : (see help(get))
 
-    yscale --   'lin' (linear) or 'log' (logarithmic) vertical y scale.
-                If log scale is selected null values are hidden.
-
     input  --   input data to plot within the cocoa framework (e.g.
                 after some analysis or filtering). Default is None which
                 means that we use the basic raw data through the get
@@ -206,6 +206,8 @@ def plot(**kwargs):
                 whom keywords are ignored.
                 input should be given as valid cocoa pandas dataframe.
     """
+    kwargs_test(kwargs,['where','what','which','whom','input'],
+            'Bad args used in the cocoa.plot() function.')
 
     input_arg=kwargs.get('input',None)
     if input_arg != None:
@@ -243,6 +245,9 @@ def hist(**kwargs):
                 When the 'input' keyword is set, where, what, which,
                 whom keywords are ignored.
     """
+    kwargs_test(kwargs,['where','what','which','whom','input'],
+            'Bad args used in the cocoa.hist() function.')
+
     input_arg=kwargs.get('input',None)
     if input_arg != None:
         if not isinstance(input_arg,pd.DataFrame):
@@ -270,6 +275,9 @@ def map(**kwargs):
     """Create a map according to arguments and options.
     See help(hist).
     """
+    kwargs_test(kwargs,['where','what','which','whom','input'],
+            'Bad args used in the cocoa.map() function.')
+
     input_arg=kwargs.get('input',None)
     where=kwargs.get('where',None)
 
