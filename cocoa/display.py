@@ -475,13 +475,13 @@ class CocoDisplay():
         del self.value
 
     #@staticmethod
-    def return_map(self,mypandas):
-        which_data = mypandas.columns[2]
+    def return_map(self,mypandas,which_data = None):
+        if type(which_data) is None.__class__:
+            which_data = mypandas.columns[2]
+        else:
+            which_data = which_data
+
         jhu_stuff = mypandas.loc[(mypandas.date == mypandas.date.max())]
-        pandas_data = pd.DataFrame({
-            'location': jhu_stuff.location,
-            'totcases': jhu_stuff.iloc[:, 2]
-        })
 
         a = self.info.add_field(field=['geometry'],input=jhu_stuff ,geofield='location')
 
@@ -489,7 +489,6 @@ class CocoDisplay():
                                   field=['country_name']),crs="EPSG:4326")
         data = data.loc[data.geometry != None]
         data['geoid'] = data.index.astype(str)
-
 
         data=data[['geoid','location',which_data,'geometry']]
         data = data.set_index('geoid')

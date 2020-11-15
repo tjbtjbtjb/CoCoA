@@ -297,4 +297,12 @@ def map(**kwargs):
     else:
         t=get(**kwargs,output='pandas')
 
-    return _cocoplot.return_map(t)
+    which=kwargs.get('which',listwhich()[0])
+    what=kwargs.get('what',None)
+    if what:
+        which_init = which
+        which = what
+        if what == 'cumul' and _whom == 'jhu':
+            which = which_init
+
+    return _cocoplot.return_map(t,which)
