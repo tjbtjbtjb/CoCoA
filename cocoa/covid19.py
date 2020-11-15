@@ -327,8 +327,11 @@ class DataBase():
             raise CocoaKeyError(kwargs['which']+' is not a available for' + self.db + 'database name. '
             'See get_available_keys_words() for the full list.')
 
+        clist=list(set(clist)) # to suppress duplicate countries
+
         diff_locations = list(set(clist) - set(self.get_locations()))
         clist = [i for i in clist if i not in diff_locations]
+
         currentout = np.array(tuple(dict(
             (c, (self.get_current_days()[kwargs['which']][c])) for c in clist).values()))
         cumulout = np.array(tuple(dict(
