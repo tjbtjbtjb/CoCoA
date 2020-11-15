@@ -515,7 +515,7 @@ class CocoDisplay():
 
         centroid=unary_union(data.geometry).centroid
         min_col,max_col=CocoDisplay.min_max_range(max(data[which_data]/1000.),max(data[which_data]))
-        colormap = branca.colormap.linear.RdPu_09.scale(2e2,2e5)#min_col,max_col)
+        colormap = branca.colormap.linear.RdPu_09.scale(min_col,max_col)
         #colormap = (colormap.to_step(n=len(data[which_data]),method='log'))
         colormap.caption = 'Covid-19 cases : ' + label
         fig = Figure(width=plot_width, height=plot_height)
