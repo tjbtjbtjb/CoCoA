@@ -35,7 +35,7 @@ produce a temporal serie plot of Covid deaths for three countries (France, Italy
 <center>
 <img src="fig/cocoa_plot_example.png" width="280px"/> 
 
-<img src="fig/cocoa_map_example.png" witdth="280px" />
+<img src="fig/cocoa_map_example.png" width="280px" />
 
 <img src="fig/cocoa_hist_example.png" width="280px" />
 
@@ -47,6 +47,10 @@ CoCoA is made to work :
 - locally (local install of Python™, for example with [`Spyder`](https://www.spyder-ide.org/) )
 - on `Jupyter` platform, either closed or opened such as [`Google Colab`](https://colab.research.google.com/)
 - through a `docker`, using for example [`mybinder`](https://mybinder.org/).
+
+Various applications code are available : 
+- [notebooks](https://github.com/tjbtjbtjb/CoCoA/tree/master/notebooks), either `help*` notebooks, `example*` or `test*` ones
+- [`py` files](https://github.com/tjbtjbtjb/CoCoA/tree/master/)py)
 
 The full documentation is available on [the Wiki](https://github.com/tjbtjbtjb/CoCoA/wiki/Home).
 
