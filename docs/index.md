@@ -1,6 +1,11 @@
 ![CoCoA Logo](fig/cocoa_640_320.png)
 # CoCoA release 1.0
 
+<section id="downloads" class="clearfix">
+  <a href="https://github.com/tjbtjbtjb/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+  <a href="https://github.com/tjbtjbtjb/CoCoA/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+</section>
+
 April/November 2020
 
 * Tristan Beau - [UFR de Physique](https://physique.u-paris.fr/) - [Université de Paris](http://u-paris.fr) - [LPNHE laboratory](http://lpnhe.in2p3.fr/)
