@@ -201,7 +201,7 @@ class CocoDisplay():
         input_names_data : variable from pandas data. If pandas is produced from cocoa get_stat method
         then 'diff' and 'cumul' can be also used
         title: title for the figure , no title by default
-        width_height : width and height of the figure,  default [400,300]
+        width_height : as a list of width and height of the histo, default [500,400]
         bins : number of bins of the hitogram default 50
         date : - default 'last'
                Value at the last date (from database point of view) and for all the location defined in
@@ -481,7 +481,23 @@ class CocoDisplay():
 
 
     #@staticmethod
-    def return_map(self,mypandas,which_data = None,width_height = None):
+    def return_map(self,mypandas,which_data = None,width_height = None, date = 'last'):
+        """Create a Folium map from a pandas input
+
+        Keyword arguments
+        -----------------
+        babepandas : pandas consided
+        which_data: variable from pandas data. If pandas is produced from cocoa get_stat method
+        then 'diff' and 'cumul' can be also used
+        width_height : as a list of width and height of the histo, default [500,400]
+        date : - default 'last'
+               Value at the last date (from database point of view) and for all the location defined in
+               the pandas will be computed
+               - date
+               Value at date (from database point of view) and for all the location defined in the pandas
+               will be computed
+        """
+
         if width_height:
             plot_width  = width_height[0]
             plot_height = width_height[1]
@@ -500,7 +516,12 @@ class CocoDisplay():
                what = 'cumulative sum'
             label = mypandas.columns[2] + ' (' + what +  ')'
 
-        jhu_stuff = mypandas.loc[(mypandas.date == mypandas.date.max())]
+        if date == "last" :
+           when = mypandas['date'].max()
+        else:
+           when = date
+
+        jhu_stuff = mypandas.loc[(mypandas.date == when)]
 
         a = self.info.add_field(field=['geometry'],input=jhu_stuff ,geofield='location')
 
@@ -514,7 +535,7 @@ class CocoDisplay():
         data = data.set_index('geoid')
 
         centroid=unary_union(data.geometry).centroid
-        min_col,max_col=CocoDisplay.min_max_range(max(data[which_data]/1000.),max(data[which_data]))
+        min_col,max_col=CocoDisplay.min_max_range(0,max(data[which_data]))
         colormap = branca.colormap.linear.RdPu_09.scale(min_col,max_col)
         #colormap = (colormap.to_step(n=len(data[which_data]),method='log'))
         colormap.caption = 'Covid-19 cases : ' + label
@@ -527,8 +548,8 @@ class CocoDisplay():
             data,
             style_function=lambda x:
             {
-                'fillColor': '#ffffffff' if x['properties'][which_data] < max(data[which_data]/1000.) else
-                colormap(x['properties'][which_data]),
+                #'fillColor': '#ffffffff' if x['properties'][which_data] < max(data[which_data]/1000.) else
+                'fillColor':colormap(x['properties'][which_data]),
                 'fillOpacity': 0.8,
                 'color' : None,
             },
