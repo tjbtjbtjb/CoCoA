@@ -2,13 +2,12 @@
 # CoCoA release 1.0
 
 <section id="downloads" class="clearfix">
-  <a href="https://github.com/tjbtjbtjb/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+  <a href="https://github.com/tjbtjbtjb/CoCoA/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
   <a href="https://github.com/tjbtjbtjb/CoCoA/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+  <a class="buttons github" href="https://github.com/tjbtjbtjb/CoCoA">View On GitHub</a>
 </section>
 
-{% include button.html url="http://www.google.com" %}
-
-April/November 2020 2
+April/November 2020
 
 * Tristan Beau - [UFR de Physique](https://physique.u-paris.fr/) - [Université de Paris](http://u-paris.fr) - [LPNHE laboratory](http://lpnhe.in2p3.fr/)
 * Julien Browaeys - [UFR de Physique](https://physique.u-paris.fr/) - [Université de Paris](http://u-paris.fr) - [MSC laboratory](http://www.msc.univ-paris-diderot.fr/)
@@ -39,7 +38,7 @@ CoCoA is made to work :
 
 The full documentation is available on [the Wiki](https://github.com/tjbtjbtjb/CoCoA/wiki/Home).
 
-The reference library is available using the `help` of function (see `help_` [notebook files](https://github.com/tjbtjbtjb/CoCoA/tree/master/notebooks)) or on related pages : 
+The reference library is available using the `help` of function (see `help_*` [notebook files](https://github.com/tjbtjbtjb/CoCoA/tree/master/notebooks)) or on related pages : 
 - [`cocoa` frontend](http://tjbtjbtjb.github.com/CoCoA/help_cocoa)
 - [`covid19` databases access](http://tjbtjbtjb.github.com/CoCoA/help_covid19)
 - [`display` tools of CoCoA](http://tjbtjbtjb.github.com/CoCoA/display)
