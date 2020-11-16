@@ -2,12 +2,12 @@
 
 """
 Project : CoCoA
-Date :    april-june 2020
+Date :    april-november 2020
 Authors : Olivier Dadoun, Julien Browaeys, Tristan Beau
 Copyright ©CoCoa-team-17
 License: See joint LICENSE file
 
-Module : cocoaplot
+Module : display
 About :
 
 An interface module to easily plot cocoa data with bokeh

@@ -10,14 +10,19 @@ License: See joint LICENSE file
 About : mandatory setup file
 """
 
-from setuptools import setup
+from setuptools import setup, find_packages
+
+pkg_vars  = {}
+with open("cocoa/_version.py") as fp:
+    exec(fp.read(), pkg_vars)
 
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
     name='CoCoA',
     url='https://github.com/tjbtjbtjb/CoCoA',
-    author='Olivier Dadoun, Julien Browaeys, Tristan Beau',
-    author_email='odadoun@gmail.com,browaeys@gmail.com,tristan.beau@gmail.com',
+    version=pkg_vars['__version__'],
+    author=pkg_vars['__author__'],
+    author_email=pkg_vars['__email__'],
     # Needed to actually package something
     packages=['cocoa'],
     # Needed for dependencies
@@ -47,8 +52,6 @@ setup(
         #'sys',\   std
         #'warnings',\  std
         ],
-    # *strongly* suggested for sharing
-    version='pre1.0',
     # The license can be anything you like
     license='MIT',
     description='CoCoA stands for COvid COlab Analysis project, which is an open source project initially designed to run in the Google colab environment.',
