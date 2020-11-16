@@ -19,17 +19,23 @@ Then, it's easy to make simple or more complex analysis.
 Database access difficulties, method unification, geo-localisation of data, are processed transparently.
 
 Thus, in only few lines of code, with almost no Python™ knowledge, one can produce a plot or a map.
-For example, after a [CoCoA install](https://github.com/tjbtjbtjb/CoCoA/wiki/Install) :
+For example, after a [CoCoA install](https://github.com/tjbtjbtjb/CoCoA/wiki/Install), the next few lines of code:
 
 ```python
 import cocoa.cocoa as cc
-cc.plot(where=['France','Italy'],which='confirmed',what='Cumul')
-cc.map(where=['European Union','United kingdom'])
+
+cc.plot(where=['France','Italy','United kingdom'],which='deaths',what='cumul')
+cc.map(where=['world'])
+cc.hist(where='middle africa',which='confirmed')
 ```
 
-produce on the one hand a temporal serie plot of Covid confirmed cases for two countries (France and Italy as an example), or the deaths map with the European Union and United Kingdom.
+produce a temporal serie plot of Covid deaths for three countries (France, Italy, and United Kingdom as an example), or the deaths map over the world, or the histogram of confirmed cases in all countries from Middle Africa.
 
-<img src="fig/cocoa_plot_example.png" height="180px"/> <img src="fig/cocoa_map_example.png" height="180px" />
+<img src="fig/cocoa_plot_example.png" height="180px"/> 
+
+<img src="fig/cocoa_map_example.png" height="180px" />
+
+<img src="fig/cocoa_hist_example.png" height="180px" />
 
 CoCoA is made to work :
 - locally (local install of Python™, for example with [`Spyder`](https://www.spyder-ide.org/) )
