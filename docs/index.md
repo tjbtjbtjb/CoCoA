@@ -50,7 +50,7 @@ CoCoA is made to work :
 
 Various applications code are available : 
 - [notebooks](https://github.com/tjbtjbtjb/CoCoA/tree/master/notebooks), either `help*` notebooks, `example*` or `test*` ones
-- [`py` files](https://github.com/tjbtjbtjb/CoCoA/tree/master/)py)
+- [`py` files](https://github.com/tjbtjbtjb/CoCoA/tree/master/py)
 
 The full documentation is available on [the Wiki](https://github.com/tjbtjbtjb/CoCoA/wiki/Home).
 
