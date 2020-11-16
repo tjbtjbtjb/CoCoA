@@ -7,8 +7,8 @@ Authors : Olivier Dadoun, Julien Browaeys, Tristan Beau
 Copyright ©CoCoa-team-17
 License: See joint LICENSE file
 
-Module : version
-About : Gives the version information, also used in the setup.py
+Module : _version
+About : Gives the version information, also used in the setup.py and __init__.py files
 
 """
 
