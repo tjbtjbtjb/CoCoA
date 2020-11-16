@@ -320,7 +320,7 @@ class GeoInfo():
     def add_field(self,**kwargs):
         """ this is the main function of the GeoInfo class. It adds to
         the input pandas dataframe some fields according to
-        the country field of input.
+        the geofield field of input.
         The return value is the pandas dataframe.
 
         Arguments :
@@ -329,7 +329,7 @@ class GeoInfo():
                     Mandatory.
         input    -- provide the input pandas dataframe. Mandatory.
         geofield -- provide the field name in the pandas where the
-                    location is stored. Default : 'country'
+                    location is stored. Default : 'location'
         overload -- Allow to overload a field. Boolean value.
                     Default : False
         """
@@ -363,6 +363,7 @@ class GeoInfo():
                 'dataframe columns. You may set overload to True.')
 
         geofield=kwargs.get('geofield','location')
+
         if not isinstance(geofield,str):
             raise CocoaTypeError('The geofield should be given as a '
                 'string.')
