@@ -32,6 +32,7 @@ from copy import copy
 import matplotlib.pyplot as plt
 import pandas as pd
 import geopandas as gpd
+import inspect
 
 from cocoa.tools import kwargs_test
 import cocoa.covid19 as coco
@@ -183,7 +184,10 @@ def get(**kwargs):
     elif which not in setwhom(whom):
         raise CocoaKeyError('Which option '+which+' not supported. '
                             'See listwhich() for list.')
-    return  _db.get_stats(which=which,location=where).rename(columns={'location': 'where'})
+    pandy = _db.get_stats(which=which,location=where)
+    if inspect.stack()[1].function == '<module>':
+        pandy = _db.get_stats(which=which,location=where).rename(columns={'location': 'where'})
+    return pandy
 
 
 
