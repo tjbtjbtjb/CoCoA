@@ -483,12 +483,12 @@ class GeoRegion():
 
     _source_dict={"UN_M49":"https://en.wikipedia.org/wiki/UN_M49",\
         "GeoScheme":"https://en.wikipedia.org/wiki/List_of_countries_by_United_Nations_geoscheme",\
-        "European Union","https://europa.eu/european-union/about-eu/countries/member-countries_en",\
-        "G7","https://en.wikipedia.org/wiki/Group_of_Seven",\
-        "G8","https://en.wikipedia.org/wiki/Group_of_Eight",\
-        "G20","https://en.wikipedia.org/wiki/G20",\
-        "G77","https://www.g77.org/doc/members.html",\
-        "OECD","https://en.wikipedia.org/wiki/OECD"}
+        "European Union":"https://europa.eu/european-union/about-eu/countries/member-countries_en",\
+        "G7":"https://en.wikipedia.org/wiki/Group_of_Seven",\
+        "G8":"https://en.wikipedia.org/wiki/Group_of_Eight",\
+        "G20":"https://en.wikipedia.org/wiki/G20",\
+        "G77":"https://www.g77.org/doc/members.html",\
+        "OECD":"https://en.wikipedia.org/wiki/OECD"}
 
     _region_dict={}
     _p_gs = pd.DataFrame()
