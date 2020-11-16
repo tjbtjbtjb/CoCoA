@@ -33,13 +33,13 @@ cc.get(where=['usa'],what='daily',which='recovered')
 produce a temporal serie plot of Covid deaths for three countries (France, Italy, and United Kingdom as an example), or the deaths map over the world, or the histogram of confirmed cases in all countries from Middle Africa, or the pandas output of recovered people in the United States.
 
 <center>
-<img src="fig/cocoa_plot_example.png" width="320px"/> 
+<img src="fig/cocoa_plot_example.png" width="280px"/> 
 
-<img src="fig/cocoa_map_example.png" height="320px" />
+<img src="fig/cocoa_map_example.png" witdth="280px" />
 
-<img src="fig/cocoa_hist_example.png" height="320px" />
+<img src="fig/cocoa_hist_example.png" width="280px" />
 
-<img src="fig/cocoa_hist_example.png" height="320px" />
+<img src="fig/cocoa_get_example.png" width="280px" />
 
 </center>
 
