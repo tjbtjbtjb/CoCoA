@@ -9,3 +9,9 @@ include:
   - test_GeoInfo.md
   - test_GeoRegion.md
   - test_GeoManager.md
+  - help_cocoa.md
+  - help_tools.md
+  - help_covid19.md
+  - help_error.md
+  - help_geo.md
+  - help_display.md
