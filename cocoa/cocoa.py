@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Project : CoCoA - Copyright © CoCoa-team-17
-Date :    april-june 2020
+Date :    april-november 2020
 Authors : Olivier Dadoun, Julien Browaeys, Tristan Beau
 License: See joint LICENSE file
 About
