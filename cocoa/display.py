@@ -51,7 +51,7 @@ from pyproj import CRS
 #import plotly.graph_objects as go
 #from branca.colormap import LinearColormap
 import branca.colormap
-
+from branca.element import Figure
 import folium
 import json
 from geopy.geocoders import Nominatim
@@ -59,6 +59,7 @@ import altair as alt
 import numpy as np
 from shapely.ops import unary_union
 
+width_height_default = [500,400]
 class CocoDisplay():
     def __init__(self,db=None):
         verb("Init of CocoDisplay()")
@@ -128,8 +129,8 @@ class CocoDisplay():
                 plot_width  = width_height[0]
                 plot_height = width_height[1]
             else :
-                plot_width  = 400
-                plot_height = 300
+                plot_width  = width_height_default[0]
+                plot_height = width_height_default[1]
             standardfig = figure(plot_width=plot_width, plot_height=plot_height,y_axis_type=axis_type, x_axis_type='datetime',
             tools=['save','box_zoom,box_select,crosshair,reset'],toolbar_location="below")
             standardfig.yaxis[0].formatter = PrintfTickFormatter(format="%4.2e")
@@ -287,8 +288,8 @@ class CocoDisplay():
                 plot_width  = width_height[0]
                 plot_height = width_height[1]
             else :
-                plot_width  = 400
-                plot_height = 300
+                plot_width  = width_height_default[0]
+                plot_height = width_height_default[1]
             standardfig = figure(plot_width=plot_width, plot_height=plot_height,y_axis_type=axis_type,
             tools=['save','box_zoom,box_select,crosshair,reset'],toolbar_location="below")
             standardfig.xaxis[0].formatter = PrintfTickFormatter(format="%4.2e")
@@ -478,8 +479,15 @@ class CocoDisplay():
         print("deleted in descriptor object")
         del self.value
 
+
     #@staticmethod
-    def return_map(self,mypandas,which_data = None):
+    def return_map(self,mypandas,which_data = None,width_height = None):
+        if width_height:
+            plot_width  = width_height[0]
+            plot_height = width_height[1]
+        else :
+            plot_width  = width_height_default[0]
+            plot_height = width_height_default[1]
         label , what ='',''
         if type(which_data) is None.__class__:
             which_data = mypandas.columns[2]
@@ -505,19 +513,16 @@ class CocoDisplay():
         data[which_data] = round(data[which_data])
         data = data.set_index('geoid')
 
-
         centroid=unary_union(data.geometry).centroid
-        #print(min(data[which_data]),max(data[which_data]))
-        #print([i for i in data[which_data] if i>0])
         min_col,max_col=CocoDisplay.min_max_range(max(data[which_data]/1000.),max(data[which_data]))
-        colormap = branca.colormap.linear.RdPu_09.scale(min_col, max_col)
+        colormap = branca.colormap.linear.RdPu_09.scale(min_col,max_col)
         #colormap = (colormap.to_step(n=len(data[which_data]),method='log'))
         colormap.caption = 'Covid-19 cases : ' + label
-
+        fig = Figure(width=plot_width, height=plot_height)
         mapa = folium.Map(location=[centroid.y, centroid.x], zoom_start=2)
         #tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png',
         #attr = "IGN")
-
+        fig.add_child(mapa)
         folium.GeoJson(
             data,
             style_function=lambda x:
