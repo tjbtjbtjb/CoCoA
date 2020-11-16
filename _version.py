@@ -19,3 +19,5 @@ About : Gives the version information, also used in the setup.py
 # see : https://stackoverflow.com/questions/458550/standard-way-to-embed-version-into-python-package
 
 __version__ = 'pre1.0'
+__author__= 'Tristan Beau, Julien Browaeys, Olivier Dadoun'
+__email__= 'cocoa@framalistes.org'

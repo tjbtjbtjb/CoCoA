@@ -13,7 +13,7 @@ About : mandatory setup file
 from setuptools import setup, find_packages
 
 pkg_vars  = {}
-with open("cocoa/_version.py") as fp:
+with open("./_version.py") as fp:
     exec(fp.read(), pkg_vars)
 
 setup(
