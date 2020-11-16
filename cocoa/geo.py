@@ -558,6 +558,10 @@ class GeoRegion():
         The standard used is iso3. To convert to another standard,
         use the GeoManager class.
         """
+
+        if type(region) != str:
+            raise CocoaKeyError("The given region is not a str type.")
+
         region=region.title()  # if not properly capitalized
         
         if region not in self.get_region_list():
