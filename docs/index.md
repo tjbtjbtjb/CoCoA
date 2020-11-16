@@ -31,11 +31,13 @@ cc.hist(where='middle africa',which='confirmed')
 
 produce a temporal serie plot of Covid deaths for three countries (France, Italy, and United Kingdom as an example), or the deaths map over the world, or the histogram of confirmed cases in all countries from Middle Africa.
 
-<img src="fig/cocoa_plot_example.png" height="180px"/> 
+<center>
+<img src="fig/cocoa_plot_example.png" height="240px"/> 
 
-<img src="fig/cocoa_map_example.png" height="180px" />
+<img src="fig/cocoa_map_example.png" height="240px" />
 
-<img src="fig/cocoa_hist_example.png" height="180px" />
+<img src="fig/cocoa_hist_example.png" height="240px" />
+</center>
 
 CoCoA is made to work :
 - locally (local install of Python™, for example with [`Spyder`](https://www.spyder-ide.org/) )
