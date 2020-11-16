@@ -27,16 +27,20 @@ import cocoa.cocoa as cc
 cc.plot(where=['France','Italy','United kingdom'],which='deaths',what='cumul')
 cc.map(where=['world'])
 cc.hist(where='middle africa',which='confirmed')
+cc.get(where=['usa'],what='daily',which='recovered')
 ```
 
-produce a temporal serie plot of Covid deaths for three countries (France, Italy, and United Kingdom as an example), or the deaths map over the world, or the histogram of confirmed cases in all countries from Middle Africa.
+produce a temporal serie plot of Covid deaths for three countries (France, Italy, and United Kingdom as an example), or the deaths map over the world, or the histogram of confirmed cases in all countries from Middle Africa, or the pandas output of recovered people in the United States.
 
 <center>
-<img src="fig/cocoa_plot_example.png" height="240px"/> 
+<img src="fig/cocoa_plot_example.png" width="320px"/> 
 
-<img src="fig/cocoa_map_example.png" height="240px" />
+<img src="fig/cocoa_map_example.png" height="320px" />
 
-<img src="fig/cocoa_hist_example.png" height="240px" />
+<img src="fig/cocoa_hist_example.png" height="320px" />
+
+<img src="fig/cocoa_hist_example.png" height="320px" />
+
 </center>
 
 CoCoA is made to work :
