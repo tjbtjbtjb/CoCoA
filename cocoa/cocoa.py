@@ -63,7 +63,8 @@ _cocoplot = cd.CocoDisplay(_db)
 
 _listwhat=['cumul','diff',  # first one is default but we must avoid uppercases
             'daily',
-            'weekly']
+            'weekly',
+            'date']
 
 # --- Front end functions ----------------------------------------------
 
@@ -175,7 +176,8 @@ def get(**kwargs):
 
     if not what:
         what=listwhat()[0]
-    elif what not in listwhat():
+    #elif what not in listwhat():
+    if not bool([s for s in listwhat() if s in what]):
         raise CocoaKeyError('What option '+what+' not supported'
                             'See listwhat() for list.')
 
@@ -289,6 +291,8 @@ def hist(**kwargs):
         if  what == 'weekly':
             t['weekly'] = t['diff'].rolling(7).mean()
             which = 'weekly'
+        if what[:5] == 'date:':
+            date = what[5:]
 
     fig=_cocoplot.cocoa_histo(t,which,bins,title,width_height,date)
 
