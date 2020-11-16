@@ -153,7 +153,7 @@ def get(**kwargs):
 
     output --   output format returned ( list (default), dict or pandas)
     """
-    kwargs_test(kwargs,['where','what','which','whom','output','width_height'],
+    kwargs_test(kwargs,['where','what','which','whom','output'],
             'Bad args used in the cocoa.get() function.')
 
     global _db,_whom
@@ -183,7 +183,8 @@ def get(**kwargs):
     elif which not in setwhom(whom):
         raise CocoaKeyError('Which option '+which+' not supported. '
                             'See listwhich() for list.')
-    return _db.get_stats(which=which,location=where)
+    return  _db.get_stats(which=which,location=where).rename(columns={'location': 'where'})
+
 
 
 # ----------------------------------------------------------------------
@@ -256,7 +257,7 @@ def hist(**kwargs):
                 When the 'input' keyword is set, where, what, which,
                 whom keywords are ignored.
     """
-    kwargs_test(kwargs,['where','what','which','whom','input','bins','width_height'],
+    kwargs_test(kwargs,['where','what','which','whom','input','bins'],
             'Bad args used in the cocoa.hist() function.')
 
     input_arg=kwargs.get('input',None)
