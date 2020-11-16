@@ -7,3 +7,5 @@ relative_links:
 include:
   - index.md
   - test_GeoInfo.md
+  - test_GeoRegion.md
+  - test_GeoManager.md

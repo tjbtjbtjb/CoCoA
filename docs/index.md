@@ -1,37 +1,38 @@
-## Welcome to GitHub Pages
+![CoCoA Logo](fig/cocoa_640_320.png)
 
-You can use the [editor on GitHub](https://github.com/tjbtjbtjb/CoCoA/edit/master/docs/index.md) to maintain and preview the content for your website in Markdown files.
+This is the <img src="fig/UK.png" height="14px" alt="UK flag" /> version of the *Readme*. You can read the <a href="README.FR.md"><img src="fig/FR.png" height="14px" alt="FR flag" /> version</a>.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+April/October 2020
 
-### Markdown
+* Tristan Beau - [UFR de Physique](https://physique.u-paris.fr/) - [Université de Paris](http://u-paris.fr) - [LPNHE laboratory](http://lpnhe.in2p3.fr/)
+* Julien Browaeys - [UFR de Physique](https://physique.u-paris.fr/) - [Université de Paris](http://u-paris.fr) - [MSC laboratory](http://www.msc.univ-paris-diderot.fr/)
+* Olivier Dadoun - [CNRS](http://cnrs.fr)/[IN2P3](http://www.in2p3.fr) - [LPNHE laboratory](http://lpnhe.in2p3.fr/)
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+The CoCoA project (Covid Collaborative Analysis) is a Python™ framework which provides a simplified and unified access to various Covid related databases.
+It's designed to offer to many people (non-specialist general public, school pupils, students, science journalists, but also scientists who are not specialists in  computing and data access methods) a simple and practical tool for studying data : raw data access, time series plots, maps.
+Then, it's easy to make simple or more complex analysis.
+Database access difficulties, method unification, geo-localisation of data, are processed transparently.
 
-```markdown
-Syntax highlighted code block
+Thus, in only few lines of code, with almost no Python™ knowledge, one can produce a plot or a map.
+For example, after a [CoCoA install](https://github.com/tjbtjbtjb/CoCoA/wiki/FR:Install) :
 
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```
+import cocoa.cocoa as cc
+cc.plot(where=['France','Italy'],which='confirmed',what='Cumul')
+cc.map(where=['European Union','United kingdom'])
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+produce on the one hand a temporal serie plot of Covid confirmed cases for two countries (France and Italy as an example), or the deaths map with the European Union and United Kingdom.
 
-### Jekyll Themes
+<img src="fig/cocoa_plot_example.png" height="180px"/> <img src="fig/cocoa_map_example.png" height="180px" />
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/tjbtjbtjb/CoCoA/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+CoCoA is made to work :
+- locally (local install of Python™, for example with [`Spyder`](https://www.spyder-ide.org/) )
+- on `Jupyter` platform, either closed or opened such as [`Google Colab`](https://colab.research.google.com/)
+- through a `docker`, using for example [`mybinder`](https://mybinder.org/).
 
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+The full documentation is available on [the Wiki](https://github.com/tjbtjbtjb/CoCoA/wiki/Home), in particular :
+- [Install](https://github.com/tjbtjbtjb/CoCoA/wiki/Install)
+- [Basic usage](https://github.com/tjbtjbtjb/CoCoA/wiki/Basics)
+- [Advanced usage](https://github.com/tjbtjbtjb/CoCoA/wiki/AdvancedUsage)
+- [Localisation management](https://github.com/tjbtjbtjb/CoCoA/wiki/Geo)
