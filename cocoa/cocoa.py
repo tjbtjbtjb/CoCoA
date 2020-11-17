@@ -238,7 +238,7 @@ def plot(**kwargs):
         if what == 'cumul' and _whom == 'jhu':
             which = which_init
         if  what == 'weekly':
-            t['weekly'] = t['diff'].rolling(7).mean()
+            t['weekly'] = t.groupby('location')['diff'].rolling(7).mean().values
             which = 'weekly'
     fig = _cocoplot.cocoa_basic_plot(t,which,title,width_height)
     show(fig)
@@ -287,7 +287,7 @@ def scrolling_plot(**kwargs):
         if what == 'cumul' and _whom == 'jhu':
             which = which_init
         if  what == 'weekly':
-            t['weekly'] = t['diff'].rolling(7).mean()
+            t['weekly'] = t['diff'].rolling(7).mean().values
             which = 'weekly'
     fig = _cocoplot.scrolling_menu(t,which,title,width_height)
     show(fig)
@@ -338,7 +338,7 @@ def hist(**kwargs):
         if what == 'cumul' and _whom == 'jhu':
             which = which_init
         if  what == 'weekly':
-            t['weekly'] = t['diff'].rolling(7).mean()
+            t['weekly'] = t['diff'].rolling(7).mean().values
             which = 'weekly'
         if what[:5] == 'date:':
             date = what[5:]
@@ -378,7 +378,7 @@ def map(**kwargs):
         if what == 'cumul' and _whom == 'jhu':
             which = which_init
         if  what == 'weekly':
-            t['weekly'] = t['diff'].rolling(7).mean()
+            t['weekly'] = t['diff'].rolling(7).mean().values
             which = 'weekly'
 
     return _cocoplot.return_map(t,which)
