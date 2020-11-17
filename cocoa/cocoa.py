@@ -196,7 +196,6 @@ def get(**kwargs):
 # ----------------------------------------------------------------------
 # --- plot(**kwargs) ---------------------------------------------------
 # ----------------------------------------------------------------------
-
 def plot(**kwargs):
     """Plot data according to arguments (same as the get function)
     and options.
@@ -243,7 +242,55 @@ def plot(**kwargs):
             which = 'weekly'
     fig = _cocoplot.cocoa_basic_plot(t,which,title,width_height)
     show(fig)
+# ----------------------------------------------------------------------
+# --- plot(**kwargs) ---------------------------------------------------
+# ----------------------------------------------------------------------
+def scrolling_plot(**kwargs):
+    """Scrolling plot data according to arguments (same as the get function)
+    and options.
 
+    Keyword arguments
+    -----------------
+
+    where (mandatory), what, which, whom : (see help(get))
+
+    input  --   input data to plot within the cocoa framework (e.g.
+                after some analysis or filtering). Default is None which
+                means that we use the basic raw data through the get
+                function.
+                When the 'input' keyword is set, where, what, which,
+                whom keywords are ignored.
+                input should be given as valid cocoa pandas dataframe.
+    """
+    kwargs_test(kwargs,['where','what','which','whom','input','width_height'],
+            'Bad args used in the cocoa.plot() function.')
+
+    input_arg=kwargs.get('input',None)
+    if input_arg != None:
+        if not isinstance(input_arg,pd.DataFrame):
+            raise CocoaTypeError('Waiting input as valid cocoa pandas '
+                'dataframe. See help.')
+        t=input_arg
+    else:
+        t=get(**kwargs,output='pandas')
+
+    which=kwargs.get('which',listwhich()[0])
+    what=kwargs.get('what',None)
+
+    title=kwargs.get('title',None)
+    width_height=kwargs.get('width_height',None)
+
+    if what:
+        which_init = which
+        if what == 'daily' or  what == 'diff':
+            which = 'diff'
+        if what == 'cumul' and _whom == 'jhu':
+            which = which_init
+        if  what == 'weekly':
+            t['weekly'] = t['diff'].rolling(7).mean()
+            which = 'weekly'
+    fig = _cocoplot.scrolling_menu(t,which,title,width_height)
+    show(fig)
 # ----------------------------------------------------------------------
 # --- hist(**kwargs) ---------------------------------------------------
 # ----------------------------------------------------------------------
@@ -262,6 +309,8 @@ def hist(**kwargs):
                 function.
                 When the 'input' keyword is set, where, what, which,
                 whom keywords are ignored.
+    what   : daily, weekly and date. For instance: what='date:05/07/2020'
+    bins   : number of the histo bins
     """
     kwargs_test(kwargs,['where','what','which','whom','input','bins'],
             'Bad args used in the cocoa.hist() function.')
