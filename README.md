@@ -1,3 +1,13 @@
+# CAUTION : PROJECT RENAMED AND MOVED !
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/ANA_777-300_Taking_off_from_JFK.jpg/120px-ANA_777-300_Taking_off_from_JFK.jpg" />
+
+Please follow us now at 
+ * [github.com/coa-project](http://github.com/coa-project).
+ * [pycoa.fr](http://pycoa.fr)
+
+---
+
 ![CoCoA Logo](/docs/fig/cocoa_640_320.png)
 # CoCoA release 1.0
 
