@@ -1,3 +1,13 @@
+# ATTENTION : PROJET RENOMMÉ ET DÉPLACÉ !
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/ANA_777-300_Taking_off_from_JFK.jpg/120px-ANA_777-300_Taking_off_from_JFK.jpg" />
+
+Suivez-nous désormais sur :
+ * [github.com/coa-project](http://github.com/coa-project).
+ * [pycoa.fr](http://pycoa.fr)
+
+---
+
 ![CoCoA Logo](/misc/cocoa_640_320.png)
 
 Vous lisez actuellement la version <img src="/misc/FR.png" height="14px" alt="UK flag" /> du *Readme* de <a href="https://github.com/tjbtjbtjb/CoCoA">CoCoA</a>. Il existe également <a href="README.md">la version <img src="/misc/UK.png" height="14px" alt="FR flag" /></a>.
